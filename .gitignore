@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Agent internal coordination
+.agents/
+main
+
+# Swift Package Manager & Build artifacts
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+*.xcuserstate
+
+# Output App Bundles
+*.app/
+*.dSYM/
