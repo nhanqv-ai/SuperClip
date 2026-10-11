@@ -16,7 +16,7 @@ public enum SearchEngine {
             }
         case .image:
             let dims = (item.imageWidth != nil && item.imageHeight != nil && item.imageWidth! > 0 && item.imageHeight! > 0) ? "\(item.imageWidth!)x\(item.imageHeight!)" : ""
-            targetText = "[Ảnh] \(dims) \(item.displayTitle)"
+            targetText = "[Ảnh] [Image] [图片] [画像] [이미지] [Imagen] [Bild] Ảnh Image 图片 画像 이미지 Imagen Bild \(dims) \(item.displayTitle)"
         }
 
         // Exact substring match (handles regex metacharacters literally)

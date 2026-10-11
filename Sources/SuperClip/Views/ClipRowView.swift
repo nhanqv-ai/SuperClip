@@ -115,6 +115,7 @@ public struct ClipRowView: View {
     public var onDelete: ((ClipItem) -> Void)?
 
     @State private var isHovered: Bool = false
+    @ObservedObject private var localizationManager = LocalizationManager.shared
 
     public init(
         item: ClipItem,
@@ -167,10 +168,10 @@ public struct ClipRowView: View {
             }
         }
         .contextMenu {
-            Button(item.isPinned ? "Unpin" : "Pin") {
+            Button(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip)) {
                 onTogglePin?(item)
             }
-            Button("Copy") {
+            Button(LocalizationManager.shared.tr(.copyClip)) {
                 if let onCopy = onCopy {
                     onCopy(item)
                 } else {
@@ -178,7 +179,7 @@ public struct ClipRowView: View {
                 }
             }
             Divider()
-            Button("Delete") {
+            Button(LocalizationManager.shared.tr(.deleteClip)) {
                 onDelete?(item)
             }
         }
@@ -192,7 +193,7 @@ public struct ClipRowView: View {
             if let text = item.textContent, !text.isEmpty {
                 let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty {
-                    return "(Whitespace)"
+                    return LocalizationManager.shared.tr(.whitespaceClip)
                 }
                 return text.replacingOccurrences(of: "\r\n", with: " ")
                            .replacingOccurrences(of: "\n", with: " ")
@@ -201,9 +202,9 @@ public struct ClipRowView: View {
             return item.displayTitle
         case .image:
             if let w = item.imageWidth, let h = item.imageHeight, w > 0, h > 0 {
-                return "[Ảnh] \(w)x\(h)"
+                return LocalizationManager.shared.tr(.imageTag(w, h))
             } else {
-                return "[Ảnh]"
+                return LocalizationManager.shared.tr(.imageTagBare)
             }
         }
     }
@@ -231,7 +232,7 @@ public struct ClipRowView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(item.isPinned ? "Unpin clip" : "Pin clip")
+                .help(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip))
 
                 // Compact Delete Button
                 Button(action: { onDelete?(item) }) {
@@ -246,7 +247,7 @@ public struct ClipRowView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Delete clip")
+                .help(LocalizationManager.shared.tr(.deleteClip))
             } else if item.isPinned {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 10, weight: .semibold))
@@ -258,9 +259,9 @@ public struct ClipRowView: View {
             }
 
             if let index = shortcutIndex, (1...9).contains(index) {
-                Text("⌘ \(index)")
+                Text("\(item.isPinned ? "⌥" : "⌘") \(index)")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundColor(.secondary.opacity(0.8))
+                    .foregroundColor(item.isPinned ? .accentColor.opacity(0.9) : .secondary.opacity(0.8))
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onSelect?(item)

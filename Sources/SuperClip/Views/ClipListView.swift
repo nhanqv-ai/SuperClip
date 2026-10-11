@@ -4,21 +4,38 @@ import SuperClipCore
 
 /// Helper utility for deterministic shortcut numbering across list sections.
 public enum ClipShortcutMapper {
-    /// Computes the shortcut index (1..9) for an item positioned within the partitioned view.
-    /// Returns 1..9 for the first 9 visible items overall (pinned first, then recent), or nil if >= 9.
+    /// Computes the shortcut index (1..9) for an item positioned within its section.
+    /// Pinned items are numbered 1..9 (with Option modifier), and recent history items are independently numbered 1..9 (with Command modifier).
     public static func shortcutIndex(
         isPinned: Bool,
         indexInSection: Int,
-        pinnedCount: Int
+        pinnedCount: Int = 0
     ) -> Int? {
-        let overallIndex = isPinned ? indexInSection : (pinnedCount + indexInSection)
-        if overallIndex < 9 {
-            return overallIndex + 1
+        if indexInSection >= 0 && indexInSection < 9 {
+            return indexInSection + 1
         }
         return nil
     }
 
-    /// Resolves the section and offset corresponding to a pressed digit key (1..9).
+    /// Resolves the section and offset corresponding to a section shortcut.
+    public static func itemIndexForShortcut(
+        _ keyNumber: Int,
+        isPinned: Bool,
+        pinnedCount: Int,
+        recentCount: Int
+    ) -> (isPinned: Bool, indexInSection: Int)? {
+        guard (1...9).contains(keyNumber) else { return nil }
+        let targetIndex = keyNumber - 1
+        if isPinned {
+            guard targetIndex < pinnedCount else { return nil }
+            return (isPinned: true, indexInSection: targetIndex)
+        } else {
+            guard targetIndex < recentCount else { return nil }
+            return (isPinned: false, indexInSection: targetIndex)
+        }
+    }
+
+    /// Sequential reverse lookup for backwards compatibility.
     public static func itemIndexForShortcut(
         _ keyNumber: Int,
         pinnedCount: Int,
@@ -57,6 +74,7 @@ public struct ClipListView: View {
     public var onDelete: ((ClipItem) -> Void)?
     public var onClearHistory: (() -> Void)?
     public var thumbnailURLProvider: ((ClipItem) -> URL?)?
+    @ObservedObject private var localizationManager = LocalizationManager.shared
 
     public init(
         pinnedItems: [ClipItem],
@@ -194,7 +212,7 @@ public struct ClipListView: View {
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.accentColor)
 
-            Text("PINNED")
+            Text(LocalizationManager.shared.tr(.pinnedSection))
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.secondary)
 
@@ -221,7 +239,7 @@ public struct ClipListView: View {
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.secondary)
 
-            Text("RECENT HISTORY")
+            Text(LocalizationManager.shared.tr(.recentSection))
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.secondary)
 
@@ -242,7 +260,7 @@ public struct ClipListView: View {
                     HStack(spacing: 3) {
                         Image(systemName: "trash")
                             .font(.system(size: 9))
-                        Text("Clear History")
+                        Text(LocalizationManager.shared.tr(.clearHistory))
                             .font(.system(size: 10, weight: .medium))
                     }
                     .foregroundColor(.secondary)
@@ -254,7 +272,7 @@ public struct ClipListView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .help("Clear unpinned history clips")
+                .help(LocalizationManager.shared.tr(.clearHistory))
             }
         }
         .padding(.horizontal, 4)
@@ -270,11 +288,11 @@ public struct ClipListView: View {
                 .font(.system(size: 28, weight: .light))
                 .foregroundColor(.secondary)
 
-            Text("No matching clips found")
+            Text(LocalizationManager.shared.tr(.noMatchingClips))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.secondary)
 
-            Text("Try refining your search query")
+            Text(LocalizationManager.shared.tr(.tryRefiningSearch))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary.opacity(0.8))
         }
@@ -287,11 +305,11 @@ public struct ClipListView: View {
                 .font(.system(size: 30, weight: .light))
                 .foregroundColor(.secondary)
 
-            Text("Clipboard history is empty")
+            Text(LocalizationManager.shared.tr(.clipboardEmpty))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.secondary)
 
-            Text("Copied text and images will appear here")
+            Text(LocalizationManager.shared.tr(.copiedWillAppear))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary.opacity(0.8))
         }

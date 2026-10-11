@@ -64,16 +64,22 @@ public struct ClipRowViewTests {
         TestHarness.assertEqual(ClipRowView.formatContentText(for: multiLineText), "Line 1 Line 2 Line 3", "Multi-line text replaces newlines with single line spaces")
 
         let whitespaceText = ClipItem(id: UUID(), contentType: .text, textContent: "  \n\t  ")
-        TestHarness.assertEqual(ClipRowView.formatContentText(for: whitespaceText), "(Whitespace)", "Whitespace-only text displays as (Whitespace)")
-
         let emptyText = ClipItem(id: UUID(), contentType: .text, textContent: "")
-        TestHarness.assertEqual(ClipRowView.formatContentText(for: emptyText), "(Empty)", "Empty text displays as (Empty)")
 
+        let savedLang = LocalizationManager.shared.currentLanguage
+        LocalizationManager.shared.setLanguage(.vietnamese)
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: whitespaceText), "(Khoảng trắng)", "Whitespace-only text displays as (Khoảng trắng) in Vietnamese")
         let imageWithDims = ClipItem(id: UUID(), contentType: .image, imageWidth: 1920, imageHeight: 1080)
         TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithDims), "[Ảnh] 1920x1080", "Image with dimensions displays [Ảnh] <width>x<height>")
 
         let imageWithoutDims = ClipItem(id: UUID(), contentType: .image, imageWidth: nil, imageHeight: nil)
         TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithoutDims), "[Ảnh]", "Image without dimensions displays [Ảnh]")
+
+        LocalizationManager.shared.setLanguage(.english)
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: whitespaceText), "(Whitespace)", "Whitespace-only text displays as (Whitespace) in English")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithDims), "[Image] 1920x1080", "Image with dimensions displays [Image] in English")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithoutDims), "[Image]", "Image without dimensions displays [Image] in English")
+        LocalizationManager.shared.setLanguage(savedLang)
 
         // 8. Image Search Matching (supports [Ảnh], Ảnh, anh, and dimensions)
         TestHarness.assertTrue(SearchEngine.matches(item: imageWithDims, query: "Ảnh"), "SearchEngine matches image clip with query 'Ảnh'")

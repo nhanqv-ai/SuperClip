@@ -14,6 +14,7 @@ public struct AppSettingsTests {
         TestHarness.assertEqual(defaults.pollIntervalMs, 250, "Default pollIntervalMs is 250")
         TestHarness.assertEqual(defaults.maxThumbnailPixelSize, 180, "Default maxThumbnailPixelSize is 180")
         TestHarness.assertFalse(defaults.launchAtLogin, "Default launchAtLogin is false")
+        TestHarness.assertEqual(defaults.language, "system", "Default language is system")
 
         // 2. Convenience aliases
         var settingsWithAliases = AppSettings()

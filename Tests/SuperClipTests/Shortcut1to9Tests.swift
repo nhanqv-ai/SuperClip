@@ -99,5 +99,32 @@ public struct Shortcut1to9Tests {
         TestHarness.assertEqual(ShortcutNavigator.badgeLabel(forIndex: 0), "1", "Index 0 badge is 1")
         TestHarness.assertEqual(ShortcutNavigator.badgeLabel(forIndex: 8), "9", "Index 8 badge is 9")
         TestHarness.assertNil(ShortcutNavigator.badgeLabel(forIndex: 9), "Index 9 badge is nil")
+
+        // 8. Section-Aware Shortcuts (Option for Pinned, Command for Recent)
+        let parsedOpt1 = ShortcutNavigator.parseSectionShortcut(from: opt1Event, searchFieldHasFocus: false)
+        TestHarness.assertEqual(parsedOpt1?.section, .pinned, "Option+1 resolves to .pinned section")
+        TestHarness.assertEqual(parsedOpt1?.digit, 1, "Option+1 resolves to digit 1")
+
+        let parsedCmd1 = ShortcutNavigator.parseSectionShortcut(from: cmd1Event, searchFieldHasFocus: true)
+        TestHarness.assertEqual(parsedCmd1?.section, .recent, "Command+1 resolves to .recent section")
+        TestHarness.assertEqual(parsedCmd1?.digit, 1, "Command+1 resolves to digit 1")
+
+        let pinnedClips = [
+            ClipItem(id: UUID(), contentType: .text, textContent: "Pinned Alpha", isPinned: true),
+            ClipItem(id: UUID(), contentType: .text, textContent: "Pinned Beta", isPinned: true)
+        ]
+        let recentClips = [
+            ClipItem(id: UUID(), contentType: .text, textContent: "Recent Gamma", isPinned: false),
+            ClipItem(id: UUID(), contentType: .text, textContent: "Recent Delta", isPinned: false)
+        ]
+
+        if let optRes = parsedOpt1 {
+            let item = ShortcutNavigator.targetItem(forSectionShortcut: optRes, pinnedItems: pinnedClips, recentItems: recentClips)
+            TestHarness.assertEqual(item?.textContent, "Pinned Alpha", "Option+1 selects 1st pinned clip")
+        }
+        if let cmdRes = parsedCmd1 {
+            let item = ShortcutNavigator.targetItem(forSectionShortcut: cmdRes, pinnedItems: pinnedClips, recentItems: recentClips)
+            TestHarness.assertEqual(item?.textContent, "Recent Gamma", "Command+1 selects 1st recent clip")
+        }
     }
 }

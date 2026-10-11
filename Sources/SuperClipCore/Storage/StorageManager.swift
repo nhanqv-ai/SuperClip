@@ -33,12 +33,13 @@ public final class StorageManager: ObservableObject, StorageManaging {
         }
         set {
             lock.lock()
-            defer { lock.unlock() }
             _settings = newValue
             _capacity = max(1, newValue.capacity)
             enforceCapacity()
             saveMetadata()
             saveSettings()
+            lock.unlock()
+            LocalizationManager.shared.setLanguage(code: newValue.language)
             notifyChange()
         }
     }
@@ -119,6 +120,7 @@ public final class StorageManager: ObservableObject, StorageManaging {
 
         self._settings = loadedSettings
         self._capacity = loadedSettings.capacity
+        LocalizationManager.shared.setLanguage(code: loadedSettings.language)
 
         createDirectoriesIfNeeded()
         loadFromDisk()

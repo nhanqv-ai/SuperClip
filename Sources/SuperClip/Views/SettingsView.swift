@@ -109,6 +109,7 @@ public struct KeyCombinationHelper {
 /// - Strict 0-emoji invariant across all UI strings and icons
 public struct SettingsView: View {
     @ObservedObject public var storageManager: StorageManager
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     public var hotKeyManager: HotKeyManaging
     public var onDismiss: (() -> Void)?
 
@@ -126,6 +127,15 @@ public struct SettingsView: View {
         case about = "About"
 
         public var id: String { rawValue }
+
+        public var localizedTitle: String {
+            switch self {
+            case .general: return LocalizationManager.shared.tr(.tabGeneral)
+            case .ignoredApps: return LocalizationManager.shared.tr(.tabIgnoredApps)
+            case .clipsManagement: return LocalizationManager.shared.tr(.tabClipsManagement)
+            case .about: return LocalizationManager.shared.tr(.tabAbout)
+            }
+        }
 
         public var iconName: String {
             switch self {
@@ -178,7 +188,7 @@ public struct SettingsView: View {
                         Image(systemName: tab.iconName)
                             .font(.system(size: 20, weight: .regular))
                             .frame(height: 24)
-                        Text(tab.rawValue)
+                        Text(tab.localizedTitle)
                             .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
                     }
                     .foregroundColor(selectedTab == tab ? .primary : .secondary)
@@ -232,13 +242,13 @@ public struct SettingsView: View {
 
     private var clippingsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Clippings")
+            Text(LocalizationManager.shared.tr(.clippingsTitle))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.primary)
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    Text("Remember:")
+                    Text(LocalizationManager.shared.tr(.rememberLabel))
                         .font(.system(size: 12))
                         .frame(width: 80, alignment: .leading)
 
@@ -255,13 +265,13 @@ public struct SettingsView: View {
                     ), in: 10...500, step: 10)
                     .labelsHidden()
 
-                    Text("clippings")
+                    Text(LocalizationManager.shared.tr(.clippingsUnit))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
 
                 HStack(spacing: 8) {
-                    Text("Display:")
+                    Text(LocalizationManager.shared.tr(.displayLabel))
                         .font(.system(size: 12))
                         .frame(width: 80, alignment: .leading)
 
@@ -286,13 +296,13 @@ public struct SettingsView: View {
                     ), in: 5...500, step: 5)
                     .labelsHidden()
 
-                    Text("clippings")
+                    Text(LocalizationManager.shared.tr(.clippingsUnit))
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
             }
 
-            Text("Pinned clips are permanently protected and do not count toward this limit.")
+            Text(LocalizationManager.shared.tr(.pinGuaranteeNote))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
                 .padding(.top, 2)
@@ -313,12 +323,12 @@ public struct SettingsView: View {
 
     private var optionsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Options")
+            Text(LocalizationManager.shared.tr(.optionsTitle))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.primary)
 
             VStack(alignment: .leading, spacing: 8) {
-                Toggle("Start SuperClip at system startup", isOn: Binding(
+                Toggle(LocalizationManager.shared.tr(.startAtLogin), isOn: Binding(
                     get: { storageManager.settings.launchAtLogin },
                     set: { newVal in
                         var s = storageManager.settings
@@ -329,7 +339,7 @@ public struct SettingsView: View {
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
 
-                Toggle("Record clipboard history", isOn: Binding(
+                Toggle(LocalizationManager.shared.tr(.recordClipboardHistory), isOn: Binding(
                     get: { storageManager.settings.recordClipboardHistory },
                     set: { newVal in
                         var s = storageManager.settings
@@ -339,13 +349,35 @@ public struct SettingsView: View {
                 ))
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12))
+
+                HStack(spacing: 8) {
+                    Text(LocalizationManager.shared.tr(.languageLabel))
+                        .font(.system(size: 12))
+                        .frame(width: 80, alignment: .leading)
+
+                    Picker("", selection: Binding(
+                        get: { storageManager.settings.language },
+                        set: { newLang in
+                            var s = storageManager.settings
+                            s.language = newLang
+                            storageManager.settings = s
+                        }
+                    )) {
+                        ForEach(AppLanguage.allCases) { lang in
+                            Text(lang.displayName).tag(lang.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 180)
+                }
+                .padding(.top, 2)
             }
 
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Text("Shortcut:")
+                    Text(LocalizationManager.shared.tr(.shortcutLabel))
                         .font(.system(size: 12))
                         .frame(width: 80, alignment: .leading)
 
@@ -364,24 +396,24 @@ public struct SettingsView: View {
                     )
 
                     if isRecordingHotKey {
-                        Text("Press shortcut...")
+                        Text(LocalizationManager.shared.tr(.pressShortcutHint))
                             .font(.system(size: 11))
                             .foregroundColor(.accentColor)
 
-                        Button("Cancel") {
+                        Button(LocalizationManager.shared.tr(.cancelButton)) {
                             stopRecordingHotKey()
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                     } else {
-                        Button("Record") {
+                        Button(LocalizationManager.shared.tr(.recordButton)) {
                             startRecordingHotKey()
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                     }
 
-                    Menu("Presets") {
+                    Menu(LocalizationManager.shared.tr(.quickPresetsTitle)) {
                         Button("Option + V (Default)") {
                             applyHotKey(keyCode: 9, modifiers: UInt32(optionKey))
                         }
@@ -455,11 +487,11 @@ public struct SettingsView: View {
 
     private var ignoredAppsTabContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Ignored Applications")
+            Text(LocalizationManager.shared.tr(.tabIgnoredApps))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.primary)
 
-            Text("SuperClip will not record clippings copied from applications in this list.")
+            Text(LocalizationManager.shared.tr(.ignoredAppsDesc))
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
 
@@ -472,12 +504,9 @@ public struct SettingsView: View {
                             Image(systemName: "eye.slash")
                                 .font(.system(size: 24))
                                 .foregroundColor(.secondary)
-                            Text("No ignored applications")
+                            Text(LocalizationManager.shared.tr(.noIgnoredApps))
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.secondary)
-                            Text("Clipboard items will be recorded from all applications.")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary.opacity(0.8))
                         }
                     )
                     .overlay(
@@ -492,6 +521,7 @@ public struct SettingsView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .help(LocalizationManager.shared.tr(.addAppButton))
 
                     Button(action: {}) {
                         Image(systemName: "minus")
@@ -500,6 +530,7 @@ public struct SettingsView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(true)
+                    .help(LocalizationManager.shared.tr(.removeButton))
 
                     Spacer()
                 }
@@ -521,22 +552,22 @@ public struct SettingsView: View {
 
     private var clipsManagementTabContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Clips Management")
+            Text(LocalizationManager.shared.tr(.tabClipsManagement))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.primary)
 
             VStack(spacing: 6) {
-                metricRow(label: "Total Stored Clips", value: "\(storageManager.items.count)")
-                metricRow(label: "Pinned Clips", value: "\(storageManager.pinnedItems.count)")
-                metricRow(label: "Unpinned History", value: "\(storageManager.historyItems.count)")
-                metricRow(label: "Disk Space Used", value: calculateDiskUsageFormatted())
+                metricRow(label: LocalizationManager.shared.tr(.totalStoredClips), value: "\(storageManager.items.count)")
+                metricRow(label: LocalizationManager.shared.tr(.pinnedClips), value: "\(storageManager.pinnedItems.count)")
+                metricRow(label: LocalizationManager.shared.tr(.unpinnedHistory), value: "\(storageManager.historyItems.count)")
+                metricRow(label: LocalizationManager.shared.tr(.diskSpaceUsed), value: calculateDiskUsageFormatted())
             }
             .padding(10)
             .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
             .cornerRadius(6)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Storage Location:")
+                Text(LocalizationManager.shared.tr(.storageLocation) + ":")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
                 Text(storageManager.baseDirectory.path)
@@ -554,27 +585,27 @@ public struct SettingsView: View {
                 Button(action: { showingClearConfirmation = true }) {
                     HStack(spacing: 4) {
                         Image(systemName: "trash")
-                        Text("Clear All Unpinned History")
+                        Text(LocalizationManager.shared.tr(.clearAllUnpinnedHistory))
                     }
                 }
                 .buttonStyle(.bordered)
                 .confirmationDialog(
-                    "Clear all unpinned clips?",
+                    LocalizationManager.shared.tr(.clearConfirmTitle),
                     isPresented: $showingClearConfirmation,
                     titleVisibility: .visible
                 ) {
-                    Button("Clear History", role: .destructive) {
+                    Button(LocalizationManager.shared.tr(.clearHistory), role: .destructive) {
                         storageManager.clearUnpinnedHistory()
                     }
-                    Button("Cancel", role: .cancel) {}
+                    Button(LocalizationManager.shared.tr(.cancelButton), role: .cancel) {}
                 } message: {
-                    Text("This permanently deletes unpinned items. All pinned clips will be preserved.")
+                    Text(LocalizationManager.shared.tr(.clearConfirmMessage))
                 }
 
                 Button(action: openStorageFolder) {
                     HStack(spacing: 4) {
                         Image(systemName: "folder")
-                        Text("Open in Finder")
+                        Text(LocalizationManager.shared.tr(.openInFinder))
                     }
                 }
                 .buttonStyle(.bordered)
@@ -601,10 +632,10 @@ public struct SettingsView: View {
                 .foregroundColor(.accentColor)
                 .padding(.top, 8)
 
-            Text("SuperClip")
+            Text(LocalizationManager.shared.tr(.appTitle))
                 .font(.system(size: 18, weight: .bold))
 
-            Text("Version 1.0.0")
+            Text(LocalizationManager.shared.tr(.versionLabel("1.0.0")))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
 
@@ -614,21 +645,21 @@ public struct SettingsView: View {
                 Button(action: { showingResetConfirmation = true }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.counterclockwise")
-                        Text("Reset All to Defaults")
+                        Text(LocalizationManager.shared.tr(.resetAllDefaults))
                     }
                 }
                 .buttonStyle(.bordered)
                 .confirmationDialog(
-                    "Reset settings to defaults?",
+                    LocalizationManager.shared.tr(.resetConfirmTitle),
                     isPresented: $showingResetConfirmation,
                     titleVisibility: .visible
                 ) {
-                    Button("Reset Defaults", role: .destructive) {
+                    Button(LocalizationManager.shared.tr(.resetDefaultsButton), role: .destructive) {
                         resetToDefaults()
                     }
-                    Button("Cancel", role: .cancel) {}
+                    Button(LocalizationManager.shared.tr(.cancelButton), role: .cancel) {}
                 } message: {
-                    Text("This resets hotkey to Option+V and capacity to 100 items.")
+                    Text(LocalizationManager.shared.tr(.resetConfirmMessage))
                 }
             }
             .padding(.bottom, 8)
@@ -650,7 +681,7 @@ public struct SettingsView: View {
     private var footerBar: some View {
         HStack {
             Spacer()
-            Button("Done") {
+            Button(LocalizationManager.shared.tr(.doneButton)) {
                 onDismiss?()
             }
             .keyboardShortcut(.defaultAction)
@@ -745,6 +776,7 @@ public struct SettingsView: View {
         let def = AppSettings()
         storageManager.capacity = AppSettings.defaultCapacity
         storageManager.settings = def
+        LocalizationManager.shared.setLanguage(code: def.language)
         hotKeyManager.register(
             keyCode: AppSettings.defaultHotKeyKeyCode,
             modifiers: AppSettings.defaultHotKeyModifiers

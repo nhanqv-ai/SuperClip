@@ -9,6 +9,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool
     public var recordClipboardHistory: Bool
     public var displayCapacity: Int
+    public var language: String
 
     public static let defaultCapacity: Int = 100
     public static let defaultHotKeyKeyCode: UInt32 = 9 // kVK_ANSI_V
@@ -18,6 +19,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public static let defaultLaunchAtLogin: Bool = false
     public static let defaultRecordClipboardHistory: Bool = true
     public static let defaultDisplayCapacity: Int = 20
+    public static let defaultLanguage: String = "system"
 
     public var historyCapacity: Int {
         get { capacity }
@@ -42,7 +44,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         maxThumbnailPixelSize: Int = AppSettings.defaultMaxThumbnailPixelSize,
         launchAtLogin: Bool = false,
         recordClipboardHistory: Bool = true,
-        displayCapacity: Int = 20
+        displayCapacity: Int = 20,
+        language: String = AppSettings.defaultLanguage
     ) {
         self.capacity = max(10, min(capacity, 1000))
         self.hotKeyKeyCode = hotKeyKeyCode
@@ -52,6 +55,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.launchAtLogin = launchAtLogin
         self.recordClipboardHistory = recordClipboardHistory
         self.displayCapacity = max(5, min(displayCapacity, 500))
+        self.language = language
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -63,6 +67,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case launchAtLogin
         case recordClipboardHistory
         case displayCapacity
+        case language
     }
 
     public init(from decoder: Decoder) throws {
@@ -79,6 +84,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.recordClipboardHistory = try container.decodeIfPresent(Bool.self, forKey: .recordClipboardHistory) ?? true
         let disp = try container.decodeIfPresent(Int.self, forKey: .displayCapacity) ?? 20
         self.displayCapacity = max(5, min(disp, 500))
+        self.language = try container.decodeIfPresent(String.self, forKey: .language) ?? AppSettings.defaultLanguage
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -91,5 +97,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try container.encode(launchAtLogin, forKey: .launchAtLogin)
         try container.encode(recordClipboardHistory, forKey: .recordClipboardHistory)
         try container.encode(displayCapacity, forKey: .displayCapacity)
+        try container.encode(language, forKey: .language)
     }
 }

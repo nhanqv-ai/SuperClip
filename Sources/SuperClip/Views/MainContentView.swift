@@ -19,6 +19,7 @@ public struct MainContentView: View {
     // MARK: - Dependencies & Callbacks
 
     @ObservedObject public var storageManager: StorageManager
+    @ObservedObject private var localizationManager = LocalizationManager.shared
     public var pasteboardWriter: any PasteboardWriting
     public var pasteboardMonitor: (any PasteboardMonitoring)?
     public var onDismiss: (() -> Void)?
@@ -150,7 +151,7 @@ public struct MainContentView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Preferences (Cmd+,)")
+            .help(LocalizationManager.shared.tr(.preferencesTooltip))
 
             Button(action: { onDismiss?() }) {
                 Image(systemName: "xmark")
@@ -160,7 +161,7 @@ public struct MainContentView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Dismiss (Escape)")
+            .help(LocalizationManager.shared.tr(.dismissTooltip))
         }
         .padding(.horizontal, 14)
         .padding(.top, 10)
@@ -170,7 +171,7 @@ public struct MainContentView: View {
     private var itemCountBadge: some View {
         Group {
             if isSearching || visibleCount < totalCount {
-                Text("\(visibleCount) of \(totalCount)")
+                Text(LocalizationManager.shared.tr(.ofCount(visibleCount, totalCount)))
             } else {
                 Text("\(totalCount)")
             }
@@ -190,7 +191,7 @@ public struct MainContentView: View {
     private var searchBarSection: some View {
         SearchBarView(
             text: $searchText,
-            placeholder: "Search clips...",
+            placeholder: LocalizationManager.shared.tr(.searchPlaceholder),
             onCommit: {
                 handleReturnKey()
             }
@@ -300,13 +301,19 @@ public struct MainContentView: View {
                 return nil
             }
 
-            // Command + 1..9 or bare 1..9 shortcut
+            // Section shortcut handling:
+            // Option + 1..9 for Pinned items
+            // Command + 1..9 (or bare 1..9) for Recent items
             let searchFieldHasFocus = (selectedIndex == nil && !searchText.isEmpty)
-            if let shortcutDigit = ShortcutNavigator.parseShortcut(
+            if let resolved = ShortcutNavigator.parseSectionShortcut(
                 from: event,
                 searchFieldHasFocus: searchFieldHasFocus
             ) {
-                if let item = ShortcutNavigator.targetItem(forShortcut: shortcutDigit, in: visibleItems) {
+                if let item = ShortcutNavigator.targetItem(
+                    forSectionShortcut: resolved,
+                    pinnedItems: partitionedClips.pinned,
+                    recentItems: partitionedClips.recent
+                ) {
                     selectItem(item)
                     return nil
                 }

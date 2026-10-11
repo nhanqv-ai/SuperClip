@@ -83,6 +83,9 @@ struct VerificationRunner {
         // 19. AppSettings Model & Persistence Tests
         AppSettingsTests.run(sandboxDir: sandboxURL.appendingPathComponent("AppSettingsTest"))
 
+        // 20. Localization & Dynamic Multilingual Tests
+        LocalizationTests.run(sandboxDir: sandboxURL.appendingPathComponent("LocalizationTest"))
+
         let elapsed = Date().timeIntervalSince(startTimestamp)
         print("\nVerification completed in \(String(format: "%.3f", elapsed)) seconds.")
         

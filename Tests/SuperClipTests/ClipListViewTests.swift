@@ -48,13 +48,23 @@ public struct ClipListViewTests {
         )
         TestHarness.assertEqual(
             ClipShortcutMapper.shortcutIndex(isPinned: false, indexInSection: 0, pinnedCount: 2),
-            3,
-            "1st recent item with 2 pinned receives shortcut index 3"
+            1,
+            "1st recent item independently receives shortcut index 1"
         )
         let resolvedKey1 = ClipShortcutMapper.itemIndexForShortcut(1, pinnedCount: 2, recentCount: 5)
         TestHarness.assertTrue(
             resolvedKey1?.isPinned == true && resolvedKey1?.indexInSection == 0,
             "Key 1 maps to 1st pinned item"
+        )
+        let resolvedPinnedKey = ClipShortcutMapper.itemIndexForShortcut(1, isPinned: true, pinnedCount: 2, recentCount: 5)
+        TestHarness.assertTrue(
+            resolvedPinnedKey?.isPinned == true && resolvedPinnedKey?.indexInSection == 0,
+            "Section key 1 (pinned) maps to 1st pinned item"
+        )
+        let resolvedRecentKey = ClipShortcutMapper.itemIndexForShortcut(1, isPinned: false, pinnedCount: 2, recentCount: 5)
+        TestHarness.assertTrue(
+            resolvedRecentKey?.isPinned == false && resolvedRecentKey?.indexInSection == 0,
+            "Section key 1 (recent) maps to 1st recent item"
         )
     }
 }
