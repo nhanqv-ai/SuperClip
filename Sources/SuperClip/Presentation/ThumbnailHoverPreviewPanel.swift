@@ -40,18 +40,42 @@ public struct TextPreviewHostView: View {
         self.text = text
     }
 
+    /// Preprocesses text to allow wrapping on long unbroken tokens (such as URLs, UUIDs, identifiers)
+    /// by inserting zero-width spaces (\u{200B}) after common delimiter characters.
+    public static func formatBreakableText(_ input: String) -> String {
+        var result = ""
+        result.reserveCapacity(input.count + input.count / 8)
+        var runLength = 0
+
+        for char in input {
+            result.append(char)
+            runLength += 1
+
+            if char == "_" || char == "-" || char == "/" || char == "." || char == "?" || char == "&" || char == "=" || char == "\\" || char == ":" {
+                result.append("\u{200B}")
+                runLength = 0
+            } else if runLength >= 25 {
+                // Break very long continuous character runs (e.g. long hashes or base64)
+                result.append("\u{200B}")
+                runLength = 0
+            }
+        }
+        return result
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(text)
+            Text(Self.formatBreakableText(text))
                 .font(.system(size: 12, weight: .regular))
                 .foregroundColor(.primary)
                 .lineSpacing(2)
-                .lineLimit(12)
+                .lineLimit(nil)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .frame(maxWidth: 340, alignment: .leading)
+        .frame(minWidth: 80, maxWidth: 520, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .windowBackgroundColor))
@@ -330,8 +354,20 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
         hostingView.layoutSubtreeIfNeeded()
 
         let fit = hostingView.fittingSize
-        let previewWidth = max(min(fit.width, 360), 100)
-        let previewHeight = max(min(fit.height, 300), 30)
+        let mouseScreen = NSEvent.mouseLocation
+        let targetWindow = NSApp.windows.first { win in
+            win.isVisible && win != self && !win.className.contains("Preview") &&
+            (win.className.contains("Floating") || win.className.contains("Popover") || win.isKeyWindow)
+        } ?? NSApp.keyWindow
+        let screen = NSScreen.screens.first { NSMouseInRect(mouseScreen, $0.frame, false) }
+            ?? targetWindow?.screen
+            ?? NSScreen.main
+            ?? NSScreen.screens.first
+        let screenVisible = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+
+        let maxAllowedWidth = max(min(screenVisible.width - 60, 540), 200)
+        let previewWidth = max(min(fit.width, maxAllowedWidth), 100)
+        let previewHeight = max(min(fit.height, 420), 30)
         positionPanel(width: previewWidth, height: previewHeight)
     }
 

@@ -172,6 +172,9 @@ public struct ClipRowViewTests {
         previewPanel.hide(immediate: true)
         TestHarness.assertNil(previewPanel.currentItemId, "hide clears currentItemId")
 
+        let breakable = TextPreviewHostView.formatBreakableText("SuperClip_Verified_Copy_2BF12BB8")
+        TestHarness.assertTrue(breakable.contains("\u{200B}"), "formatBreakableText inserts zero-width spaces for unbroken delimiter tokens")
+
         // 12. Sensitive Information Masking (R1-R4)
         let cleartextPassword = "super_secret_master_password_98765"
         let maskedTextItem = ClipItem(
