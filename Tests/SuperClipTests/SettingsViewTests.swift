@@ -263,11 +263,17 @@ public struct SettingsViewTests {
             TestHarness.assertTrue(!tab.iconName.isEmpty, "Tab \(tab.rawValue) icon name is not empty")
         }
 
-        // Test recording mode initialization
+        // Test recording mode and standard mode initialization
         let recView = SettingsView(storageManager: storage, initialRecording: true)
         let hostingRec = NSHostingView(rootView: recView)
         hostingRec.frame = NSRect(x: 0, y: 0, width: 490, height: 475)
         TestHarness.assertEqual(hostingRec.frame.width, 490, "Recording view width is 490")
         TestHarness.assertEqual(hostingRec.frame.height, 475, "Recording view height is 475")
+
+        let normalView = SettingsView(storageManager: storage, initialRecording: false)
+        let hostingNorm = NSHostingView(rootView: normalView)
+        hostingNorm.frame = NSRect(x: 0, y: 0, width: 490, height: 475)
+        TestHarness.assertEqual(hostingNorm.frame.width, 490, "Standard view width is 490")
+        TestHarness.assertEqual(hostingNorm.frame.height, 475, "Standard view height is 475")
     }
 }

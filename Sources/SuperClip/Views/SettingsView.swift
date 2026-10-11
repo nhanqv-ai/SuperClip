@@ -513,6 +513,7 @@ public struct SettingsView: View {
                 }
                 .toggleStyle(.checkbox)
                 .font(.system(size: 11))
+                .disabled(isRecordingHotKey)
 
                 // Key Selection Row
                 HStack(spacing: 8) {
@@ -544,6 +545,7 @@ public struct SettingsView: View {
 
                     Spacer()
                 }
+                .disabled(isRecordingHotKey)
             }
 
             if let warning = hotKeyWarningMessage {
