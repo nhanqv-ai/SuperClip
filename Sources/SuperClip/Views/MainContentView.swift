@@ -92,9 +92,6 @@ public struct MainContentView: View {
                 Divider()
                     .opacity(0.6)
                 contentSection
-                Divider()
-                    .opacity(0.6)
-                bottomMenuActions
             }
             .frame(width: 380, height: 600)
             .background(
@@ -231,38 +228,6 @@ public struct MainContentView: View {
         )
     }
 
-    // MARK: - Bottom Menu Actions (CopyClip Style)
-
-    private var bottomMenuActions: some View {
-        VStack(spacing: 1) {
-            menuActionRow(title: "Quit", shortcut: "⌘ Q") {
-                NSApp.terminate(nil)
-            }
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
-    }
-
-    private func menuActionRow(title: String, shortcut: String?, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(title)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundColor(.primary)
-                Spacer()
-                if let shortcut = shortcut {
-                    Text(shortcut)
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                        .foregroundColor(.secondary.opacity(0.8))
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(MenuRowButtonStyle())
-    }
-
     // MARK: - Actions & Keyboard Interception
 
     public func selectItem(_ item: ClipItem) {
@@ -356,21 +321,5 @@ public struct MainContentView: View {
             NSEvent.removeMonitor(monitor)
             localKeyMonitor = nil
         }
-    }
-}
-
-/// Native menu-like hover button style for bottom action rows.
-private struct MenuRowButtonStyle: ButtonStyle {
-    @State private var isHovered: Bool = false
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(configuration.isPressed ? Color.accentColor.opacity(0.2) : (isHovered ? Color.accentColor.opacity(0.12) : Color.clear))
-            )
-            .onHover { hovering in
-                isHovered = hovering
-            }
     }
 }
