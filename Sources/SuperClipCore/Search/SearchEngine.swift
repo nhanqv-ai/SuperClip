@@ -9,14 +9,17 @@ public enum SearchEngine {
         switch item.contentType {
         case .text:
             let content = item.textContent ?? ""
-            if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if item.isMasked {
+                targetText = "\(content) •••••••• ****"
+            } else if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 targetText = "\(content) \(item.displayTitle)"
             } else {
                 targetText = content
             }
         case .image:
             let dims = (item.imageWidth != nil && item.imageHeight != nil && item.imageWidth! > 0 && item.imageHeight! > 0) ? "\(item.imageWidth!)x\(item.imageHeight!)" : ""
-            targetText = "[Ảnh] [Image] [图片] [画像] [이미지] [Imagen] [Bild] Ảnh Image 图片 画像 이미지 Imagen Bild \(dims) \(item.displayTitle)"
+            let maskTokens = item.isMasked ? "•••••••• **** " : ""
+            targetText = "\(maskTokens)[Ảnh] [Image] [图片] [画像] [이미지] [Imagen] [Bild] Ảnh Image 图片 画像 이미지 Imagen Bild \(dims) \(item.displayTitle)"
         }
 
         // Exact substring match (handles regex metacharacters literally)

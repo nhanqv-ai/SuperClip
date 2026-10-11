@@ -6,6 +6,7 @@ public protocol StorageManaging: AnyObject, ObservableObject {
     var capacity: Int { get set }
     func addClip(item: ClipItem, imageData: Data?, thumbData: Data?)
     func togglePin(id: UUID)
+    func toggleMaskItem(id: UUID)
     func deleteItem(id: UUID)
     func clearUnpinnedHistory()
     func getThumbnailURL(for item: ClipItem) -> URL?
@@ -17,6 +18,7 @@ public protocol StorageManaging: AnyObject, ObservableObject {
 }
 
 extension StorageManaging {
+    public func toggleMaskItem(id: UUID) {}
     public func addIgnoredApp(_ app: IgnoredApp) {}
     public func removeIgnoredApp(bundleIdentifier: String) {}
     public func isAppIgnored(bundleIdentifier: String?, name: String? = nil) -> Bool { false }
@@ -211,7 +213,8 @@ public final class StorageManager: ObservableObject, StorageManaging {
                 imageHeight: item.imageHeight,
                 byteSize: item.byteSize,
                 createdAt: item.createdAt,
-                isPinned: item.isPinned
+                isPinned: item.isPinned,
+                isMasked: item.isMasked
             )
         }
 
@@ -228,6 +231,15 @@ public final class StorageManager: ObservableObject, StorageManaging {
         guard let index = _items.firstIndex(where: { $0.id == id }) else { return }
         _items[index].isPinned.toggle()
         enforceCapacity()
+        saveMetadata()
+        notifyChange()
+    }
+
+    public func toggleMaskItem(id: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let index = _items.firstIndex(where: { $0.id == id }) else { return }
+        _items[index].isMasked.toggle()
         saveMetadata()
         notifyChange()
     }

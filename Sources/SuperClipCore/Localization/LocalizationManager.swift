@@ -109,6 +109,8 @@ public enum L10nKey: Sendable {
     // Row Actions & Context Menu
     case pinClip
     case unpinClip
+    case maskClip
+    case revealClip
     case copyClip
     case deleteClip
 
@@ -359,6 +361,30 @@ public enum L10nKey: Sendable {
             case .french: return "Désépingler le clip"
             case .german: return "Clip lösen"
             default: return "Unpin clip"
+            }
+
+        case .maskClip:
+            switch lang {
+            case .vietnamese: return "Ẩn thông tin nhạy cảm"
+            case .simplifiedChinese: return "隐藏敏感信息"
+            case .japanese: return "機密情報を非表示"
+            case .korean: return "민감한 정보 숨기기"
+            case .spanish: return "Ocultar información confidencial"
+            case .french: return "Masquer les informations sensibles"
+            case .german: return "Vertrauliche Informationen ausblenden"
+            default: return "Mask Sensitive Information"
+            }
+
+        case .revealClip:
+            switch lang {
+            case .vietnamese: return "Hiện thông tin nhạy cảm"
+            case .simplifiedChinese: return "显示敏感信息"
+            case .japanese: return "機密情報を表示"
+            case .korean: return "민감한 정보 표시"
+            case .spanish: return "Mostrar información confidencial"
+            case .french: return "Afficher les informations sensibles"
+            case .german: return "Vertrauliche Informationen anzeigen"
+            default: return "Reveal Sensitive Information"
             }
 
         case .copyClip:

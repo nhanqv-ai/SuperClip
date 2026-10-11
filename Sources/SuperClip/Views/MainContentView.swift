@@ -195,6 +195,9 @@ public struct MainContentView: View {
             onTogglePin: { item in
                 storageManager.togglePin(id: item.id)
             },
+            onToggleMask: { item in
+                storageManager.toggleMaskItem(id: item.id)
+            },
             onCopy: { item in
                 selectItem(item)
             },

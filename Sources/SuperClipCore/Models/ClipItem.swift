@@ -11,6 +11,7 @@ public struct ClipItem: Identifiable, Codable, Equatable, Hashable, Sendable {
     public let byteSize: Int
     public var createdAt: Date
     public var isPinned: Bool
+    public var isMasked: Bool
 
     public init(
         id: UUID = UUID(),
@@ -22,7 +23,8 @@ public struct ClipItem: Identifiable, Codable, Equatable, Hashable, Sendable {
         imageHeight: Int? = nil,
         byteSize: Int = 0,
         createdAt: Date = Date(),
-        isPinned: Bool = false
+        isPinned: Bool = false,
+        isMasked: Bool = false
     ) {
         self.id = id
         self.contentType = contentType
@@ -34,9 +36,67 @@ public struct ClipItem: Identifiable, Codable, Equatable, Hashable, Sendable {
         self.byteSize = byteSize
         self.createdAt = createdAt
         self.isPinned = isPinned
+        self.isMasked = isMasked
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case contentType
+        case textContent
+        case imageFileName
+        case thumbnailFileName
+        case imageWidth
+        case imageHeight
+        case byteSize
+        case createdAt
+        case isPinned
+        case isMasked
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.contentType = try container.decode(ClipType.self, forKey: .contentType)
+        self.textContent = try container.decodeIfPresent(String.self, forKey: .textContent)
+        self.imageFileName = try container.decodeIfPresent(String.self, forKey: .imageFileName)
+        self.thumbnailFileName = try container.decodeIfPresent(String.self, forKey: .thumbnailFileName)
+        self.imageWidth = try container.decodeIfPresent(Int.self, forKey: .imageWidth)
+        self.imageHeight = try container.decodeIfPresent(Int.self, forKey: .imageHeight)
+        self.byteSize = try container.decode(Int.self, forKey: .byteSize)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        self.isMasked = try container.decodeIfPresent(Bool.self, forKey: .isMasked) ?? false
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(contentType, forKey: .contentType)
+        try container.encodeIfPresent(textContent, forKey: .textContent)
+        try container.encodeIfPresent(imageFileName, forKey: .imageFileName)
+        try container.encodeIfPresent(thumbnailFileName, forKey: .thumbnailFileName)
+        try container.encodeIfPresent(imageWidth, forKey: .imageWidth)
+        try container.encodeIfPresent(imageHeight, forKey: .imageHeight)
+        try container.encode(byteSize, forKey: .byteSize)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(isPinned, forKey: .isPinned)
+        try container.encode(isMasked, forKey: .isMasked)
+    }
+
+    public mutating func toggleMasked() {
+        isMasked.toggle()
+    }
+
+    public func toggledMasked() -> ClipItem {
+        var copy = self
+        copy.isMasked.toggle()
+        return copy
     }
 
     public var displayTitle: String {
+        if isMasked {
+            return "••••••••"
+        }
         switch contentType {
         case .text:
             guard let text = textContent, !text.isEmpty else { return "(Empty)" }

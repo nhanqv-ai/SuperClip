@@ -19,7 +19,11 @@ public struct ClipPreviewHostView: View {
     public var body: some View {
         switch content {
         case .image(let item, let url):
-            ThumbnailPreviewHostView(item: item, thumbnailURL: url)
+            if item.isMasked {
+                TextPreviewHostView(text: "••••••••")
+            } else {
+                ThumbnailPreviewHostView(item: item, thumbnailURL: url)
+            }
         case .text(let text):
             TextPreviewHostView(text: text)
         case .none:
@@ -72,73 +76,77 @@ public struct ThumbnailPreviewHostView: View {
     }
 
     public var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 5)
+        if item?.isMasked == true {
+            TextPreviewHostView(text: "••••••••")
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 5)
 
-            VStack(spacing: 8) {
-                // Thumbnail display container
-                ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.secondary.opacity(0.08))
+                VStack(spacing: 8) {
+                    // Thumbnail display container
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Color.secondary.opacity(0.08))
 
-                    if let img = image {
-                        Image(nsImage: img)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 216, maxHeight: 130)
-                            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                    } else {
-                        VStack(spacing: 4) {
-                            Image(systemName: "photo")
-                                .font(.system(size: 26, weight: .light))
+                        if let img = image {
+                            Image(nsImage: img)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: 216, maxHeight: 130)
+                                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        } else {
+                            VStack(spacing: 4) {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 26, weight: .light))
+                                    .foregroundColor(.secondary)
+                                    Text(LocalizationManager.shared.tr(.imageTagBare))
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundColor(.secondary)
+                            }
+                            .frame(width: 216, height: 130)
+                        }
+                    }
+                    .frame(width: 216, height: 130)
+
+                    // Footer with dimensions / tag
+                    HStack(spacing: 5) {
+                        Image(systemName: "photo.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(.accentColor)
+
+                        if let item = item, let w = item.imageWidth, let h = item.imageHeight, w > 0, h > 0 {
+                            Text("\(w) x \(h) px")
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(.secondary)
+                        } else {
                             Text(LocalizationManager.shared.tr(.imageTagBare))
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(.secondary)
                         }
-                        .frame(width: 216, height: 130)
+                        Spacer()
                     }
+                    .padding(.horizontal, 4)
                 }
-                .frame(width: 216, height: 130)
-
-                // Footer with dimensions / tag
-                HStack(spacing: 5) {
-                    Image(systemName: "photo.fill")
-                        .font(.system(size: 9))
-                        .foregroundColor(.accentColor)
-
-                    if let item = item, let w = item.imageWidth, let h = item.imageHeight, w > 0, h > 0 {
-                        Text("\(w) x \(h) px")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text(LocalizationManager.shared.tr(.imageTagBare))
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 4)
+                .padding(10)
             }
-            .padding(10)
-        }
-        .frame(width: 236, height: 175)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
-        )
-        .onAppear {
-            loadImage()
-        }
-        .onChange(of: thumbnailURL) { _ in
-            loadImage()
+            .frame(width: 236, height: 175)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
+            )
+            .onAppear {
+                loadImage()
+            }
+            .onChange(of: thumbnailURL) { _ in
+                loadImage()
+            }
         }
     }
 
     private func loadImage() {
-        guard let item = item else { return }
+        guard let item = item, !item.isMasked else { return }
 
         // 1. Try provided thumbnailURL
         if let url = thumbnailURL {
@@ -191,6 +199,8 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
     public static let shared = ThumbnailHoverPreviewPanel()
 
     public private(set) var currentItemId: UUID?
+    public private(set) var currentIsMasked: Bool = false
+    public private(set) var currentIsImage: Bool = false
     private var hostingView: NSHostingView<ClipPreviewHostView>
     private var showTimer: Timer?
     private var hideTimer: Timer?
@@ -220,6 +230,11 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
         hideTimer?.invalidate()
         hideTimer = nil
 
+        if item.isMasked {
+            showText(item: item, text: "••••••••")
+            return
+        }
+
         if item.contentType == .image {
             showImage(item: item, thumbnailURL: thumbnailURL)
         } else if item.contentType == .text {
@@ -235,7 +250,12 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
     }
 
     private func showImage(item: ClipItem, thumbnailURL: URL?) {
-        if currentItemId == item.id && isVisible {
+        if item.isMasked {
+            showText(item: item, text: "••••••••")
+            return
+        }
+
+        if currentItemId == item.id && currentIsMasked == false && currentIsImage && isVisible {
             return
         }
 
@@ -254,7 +274,9 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
     }
 
     private func showText(item: ClipItem, text: String) {
-        if currentItemId == item.id && isVisible {
+        let textToDisplay = item.isMasked ? "••••••••" : text
+
+        if currentItemId == item.id && currentIsMasked == item.isMasked && !currentIsImage && isVisible {
             return
         }
 
@@ -263,16 +285,20 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
 
         if isVisible {
             // Already visible: transition immediately with 0ms delay!
-            displayText(item: item, text: text)
+            displayText(item: item, text: textToDisplay)
         } else {
             // Initial hover entry debounce (100ms)
             showTimer = Timer.scheduledTimer(withTimeInterval: 0.10, repeats: false) { [weak self] _ in
-                self?.displayText(item: item, text: text)
+                self?.displayText(item: item, text: textToDisplay)
             }
         }
     }
 
     public func display(item: ClipItem, thumbnailURL: URL?) {
+        if item.isMasked {
+            displayText(item: item, text: "••••••••")
+            return
+        }
         if item.contentType == .image {
             displayImage(item: item, thumbnailURL: thumbnailURL)
         } else {
@@ -284,14 +310,23 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
     }
 
     public func displayImage(item: ClipItem, thumbnailURL: URL?) {
+        if item.isMasked {
+            displayText(item: item, text: "••••••••")
+            return
+        }
         self.currentItemId = item.id
+        self.currentIsMasked = false
+        self.currentIsImage = true
         hostingView.rootView = ClipPreviewHostView(content: .image(item, thumbnailURL))
         positionPanel(width: 236, height: 175)
     }
 
     public func displayText(item: ClipItem, text: String) {
         self.currentItemId = item.id
-        hostingView.rootView = ClipPreviewHostView(content: .text(text))
+        self.currentIsMasked = item.isMasked
+        self.currentIsImage = false
+        let textToDisplay = item.isMasked ? "••••••••" : text
+        hostingView.rootView = ClipPreviewHostView(content: .text(textToDisplay))
         hostingView.layoutSubtreeIfNeeded()
 
         let fit = hostingView.fittingSize
@@ -358,6 +393,8 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
             hideTimer?.invalidate()
             hideTimer = nil
             currentItemId = nil
+            currentIsMasked = false
+            currentIsImage = false
             if isVisible {
                 self.orderOut(nil)
             }
@@ -369,6 +406,8 @@ public final class ThumbnailHoverPreviewPanel: NSPanel {
         hideTimer = Timer.scheduledTimer(withTimeInterval: 0.06, repeats: false) { [weak self] _ in
             guard let self = self else { return }
             self.currentItemId = nil
+            self.currentIsMasked = false
+            self.currentIsImage = false
             if self.isVisible {
                 self.orderOut(nil)
             }

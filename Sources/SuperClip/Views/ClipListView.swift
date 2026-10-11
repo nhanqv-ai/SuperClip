@@ -70,6 +70,7 @@ public struct ClipListView: View {
     public let selectedItemId: UUID?
     public var onSelect: ((ClipItem) -> Void)?
     public var onTogglePin: ((ClipItem) -> Void)?
+    public var onToggleMask: ((ClipItem) -> Void)?
     public var onCopy: ((ClipItem) -> Void)?
     public var onDelete: ((ClipItem) -> Void)?
     public var onClearHistory: (() -> Void)?
@@ -83,6 +84,7 @@ public struct ClipListView: View {
         selectedItemId: UUID? = nil,
         onSelect: ((ClipItem) -> Void)? = nil,
         onTogglePin: ((ClipItem) -> Void)? = nil,
+        onToggleMask: ((ClipItem) -> Void)? = nil,
         onCopy: ((ClipItem) -> Void)? = nil,
         onDelete: ((ClipItem) -> Void)? = nil,
         onClearHistory: (() -> Void)? = nil,
@@ -94,6 +96,7 @@ public struct ClipListView: View {
         self.selectedItemId = selectedItemId
         self.onSelect = onSelect
         self.onTogglePin = onTogglePin
+        self.onToggleMask = onToggleMask
         self.onCopy = onCopy
         self.onDelete = onDelete
         self.onClearHistory = onClearHistory
@@ -119,6 +122,7 @@ public struct ClipListView: View {
         self.onSelect = onSelect
         self.onCopy = onCopy
         self.onTogglePin = { item in storageManager.togglePin(id: item.id) }
+        self.onToggleMask = { item in storageManager.toggleMaskItem(id: item.id) }
         self.onDelete = { item in storageManager.deleteItem(id: item.id) }
         self.onClearHistory = { storageManager.clearUnpinnedHistory() }
     }
@@ -162,6 +166,7 @@ public struct ClipListView: View {
                             isSelected: item.id == selectedItemId,
                             onSelect: onSelect,
                             onTogglePin: onTogglePin,
+                            onToggleMask: onToggleMask,
                             onCopy: onCopy,
                             onDelete: onDelete
                         )
@@ -180,6 +185,7 @@ public struct ClipListView: View {
                             isSelected: item.id == selectedItemId,
                             onSelect: onSelect,
                             onTogglePin: onTogglePin,
+                            onToggleMask: onToggleMask,
                             onCopy: onCopy,
                             onDelete: onDelete
                         )

@@ -32,6 +32,8 @@ public struct LocalizationTests {
         TestHarness.assertEqual(loc.tr(.tabGeneral), "Cài đặt chung", "Tab General translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.authorLabel), "Tác giả", "Author label translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.licenseLabel), "Giấy phép", "License label translated to Vietnamese")
+        TestHarness.assertEqual(loc.tr(.maskClip), "Ẩn thông tin nhạy cảm", "Mask clip translated to Vietnamese")
+        TestHarness.assertEqual(loc.tr(.revealClip), "Hiện thông tin nhạy cảm", "Reveal clip translated to Vietnamese")
 
         loc.setLanguage(.simplifiedChinese)
         TestHarness.assertEqual(loc.effectiveLanguage, .simplifiedChinese, "Effective language is Simplified Chinese")
@@ -40,6 +42,8 @@ public struct LocalizationTests {
         TestHarness.assertEqual(loc.tr(.languageLabel), "语言:", "Language label translated to Chinese")
         TestHarness.assertEqual(loc.tr(.authorLabel), "作者", "Author label translated to Chinese")
         TestHarness.assertEqual(loc.tr(.licenseLabel), "许可证", "License label translated to Chinese")
+        TestHarness.assertEqual(loc.tr(.maskClip), "隐藏敏感信息", "Mask clip translated to Chinese")
+        TestHarness.assertEqual(loc.tr(.revealClip), "显示敏感信息", "Reveal clip translated to Chinese")
 
         loc.setLanguage(.japanese)
         TestHarness.assertEqual(loc.effectiveLanguage, .japanese, "Effective language is Japanese")
@@ -48,6 +52,24 @@ public struct LocalizationTests {
         TestHarness.assertEqual(loc.tr(.languageLabel), "言語:", "Language label translated to Japanese")
         TestHarness.assertEqual(loc.tr(.authorLabel), "開発者", "Author label translated to Japanese")
         TestHarness.assertEqual(loc.tr(.licenseLabel), "ライセンス", "License label translated to Japanese")
+        TestHarness.assertEqual(loc.tr(.maskClip), "機密情報を非表示", "Mask clip translated to Japanese")
+        TestHarness.assertEqual(loc.tr(.revealClip), "機密情報を表示", "Reveal clip translated to Japanese")
+
+        loc.setLanguage(.korean)
+        TestHarness.assertEqual(loc.tr(.maskClip), "민감한 정보 숨기기", "Mask clip translated to Korean")
+        TestHarness.assertEqual(loc.tr(.revealClip), "민감한 정보 표시", "Reveal clip translated to Korean")
+
+        loc.setLanguage(.spanish)
+        TestHarness.assertEqual(loc.tr(.maskClip), "Ocultar información confidencial", "Mask clip translated to Spanish")
+        TestHarness.assertEqual(loc.tr(.revealClip), "Mostrar información confidencial", "Reveal clip translated to Spanish")
+
+        loc.setLanguage(.french)
+        TestHarness.assertEqual(loc.tr(.maskClip), "Masquer les informations sensibles", "Mask clip translated to French")
+        TestHarness.assertEqual(loc.tr(.revealClip), "Afficher les informations sensibles", "Reveal clip translated to French")
+
+        loc.setLanguage(.german)
+        TestHarness.assertEqual(loc.tr(.maskClip), "Vertrauliche Informationen ausblenden", "Mask clip translated to German")
+        TestHarness.assertEqual(loc.tr(.revealClip), "Vertrauliche Informationen anzeigen", "Reveal clip translated to German")
 
         loc.setLanguage(.english)
         TestHarness.assertEqual(loc.effectiveLanguage, .english, "Effective language is English")
@@ -58,6 +80,8 @@ public struct LocalizationTests {
         TestHarness.assertTrue(loc.tr(.shortcutHelperText).contains("cursor"), "Shortcut helper translated to English")
         TestHarness.assertEqual(loc.tr(.authorLabel), "Author", "Author label translated to English")
         TestHarness.assertEqual(loc.tr(.licenseLabel), "License", "License label translated to English")
+        TestHarness.assertEqual(loc.tr(.maskClip), "Mask Sensitive Information", "Mask clip translated to English")
+        TestHarness.assertEqual(loc.tr(.revealClip), "Reveal Sensitive Information", "Reveal clip translated to English")
 
         // 3. Image tag localization
         TestHarness.assertEqual(L10nKey.imageTag(800, 600).localized(for: .vietnamese), "[Ảnh] 800x600", "Vietnamese image tag")

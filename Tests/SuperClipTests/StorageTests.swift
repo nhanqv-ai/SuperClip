@@ -69,5 +69,83 @@ public struct StorageTests {
         
         TestHarness.assertNotNil(storage2.getThumbnailURL(for: imgItem), "Thumbnail URL generated for image item")
         TestHarness.assertEqual(storage2.getImageData(for: imgItem)?.count, fakeImageData.count, "Image data retrieved identically from disk")
+
+        // Test 7: ClipItem isMasked property, Codable round-trip and backward compatibility
+        var defaultItem = ClipItem(id: UUID(), contentType: .text, textContent: "Sensitive Token 123")
+        TestHarness.assertFalse(defaultItem.isMasked, "Default isMasked is false")
+
+        defaultItem.toggleMasked()
+        TestHarness.assertTrue(defaultItem.isMasked, "toggleMasked toggles isMasked to true")
+
+        let toggledCopy = defaultItem.toggledMasked()
+        TestHarness.assertFalse(toggledCopy.isMasked, "toggledMasked produces copy with isMasked false")
+
+        // JSON Codable round-trip with isMasked: true
+        let maskedItem = ClipItem(
+            id: UUID(),
+            contentType: .text,
+            textContent: "Secret API Key",
+            byteSize: 14,
+            isPinned: false,
+            isMasked: true
+        )
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        let encodedData = try? encoder.encode(maskedItem)
+        TestHarness.assertNotNil(encodedData, "ClipItem with isMasked encoded successfully")
+        let decodedItem = encodedData.flatMap { try? decoder.decode(ClipItem.self, from: $0) }
+        TestHarness.assertNotNil(decodedItem, "ClipItem with isMasked decoded successfully")
+        if let decodedItem = decodedItem {
+            TestHarness.assertEqual(decodedItem.id, maskedItem.id, "Decoded item preserves UUID")
+            TestHarness.assertEqual(decodedItem.textContent, maskedItem.textContent, "Decoded item preserves raw textContent")
+            TestHarness.assertTrue(decodedItem.isMasked, "Decoded item preserves isMasked == true")
+        }
+
+        // Backward compatibility: JSON lacking isMasked key decodes with default isMasked = false
+        let legacyJSON = """
+        {
+            "id": "\(UUID().uuidString)",
+            "contentType": "text",
+            "textContent": "Legacy unmasked item",
+            "byteSize": 20,
+            "createdAt": 0,
+            "isPinned": false
+        }
+        """.data(using: .utf8)!
+        let legacyDecoded = try? decoder.decode(ClipItem.self, from: legacyJSON)
+        TestHarness.assertNotNil(legacyDecoded, "Legacy JSON without isMasked decoded successfully")
+        TestHarness.assertFalse(legacyDecoded?.isMasked ?? true, "Legacy JSON without isMasked defaults to false")
+
+        // Test 8: StorageManager.toggleMaskItem persists masked state correctly
+        let sensitiveClip = ClipItem(
+            id: UUID(),
+            contentType: .text,
+            textContent: "PasswordSecret999",
+            byteSize: 17,
+            isPinned: false,
+            isMasked: false
+        )
+        storage2.addClip(item: sensitiveClip, imageData: nil, thumbData: nil)
+        storage2.flushDiskQueue()
+        TestHarness.assertFalse(storage2.items.first!.isMasked, "Initially unmasked in storage")
+
+        storage2.toggleMaskItem(id: sensitiveClip.id)
+        storage2.flushDiskQueue()
+        TestHarness.assertTrue(storage2.items.first!.isMasked, "toggleMaskItem toggles isMasked to true in memory")
+
+        // Cold-start reload from disk
+        let storage3 = StorageManager(baseDirectory: sandboxDir, initialCapacity: 10)
+        let reloadedClip = storage3.items.first(where: { $0.id == sensitiveClip.id })
+        TestHarness.assertNotNil(reloadedClip, "Reloaded storage contains sensitive clip")
+        TestHarness.assertTrue(reloadedClip?.isMasked ?? false, "Masked state isMasked == true persisted across reload")
+        TestHarness.assertEqual(reloadedClip?.textContent, "PasswordSecret999", "Original plain text preserved in storage")
+
+        // Toggle back to false and verify persistence
+        storage3.toggleMaskItem(id: sensitiveClip.id)
+        storage3.flushDiskQueue()
+        TestHarness.assertFalse(storage3.items.first(where: { $0.id == sensitiveClip.id })?.isMasked ?? true, "Toggled back to unmasked in memory")
+
+        let storage4 = StorageManager(baseDirectory: sandboxDir, initialCapacity: 10)
+        TestHarness.assertFalse(storage4.items.first(where: { $0.id == sensitiveClip.id })?.isMasked ?? true, "Unmasked state persisted across reload")
     }
 }

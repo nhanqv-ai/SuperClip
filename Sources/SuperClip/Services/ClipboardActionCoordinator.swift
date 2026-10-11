@@ -39,6 +39,11 @@ public final class ClipboardActionCoordinator {
         storageManager.togglePin(id: item.id)
     }
 
+    /// Toggles the masked state for an item.
+    public func toggleMask(item: ClipItem) {
+        storageManager.toggleMaskItem(id: item.id)
+    }
+
     /// Deletes an item permanently from memory and disk.
     public func deleteItem(item: ClipItem) {
         storageManager.deleteItem(id: item.id)

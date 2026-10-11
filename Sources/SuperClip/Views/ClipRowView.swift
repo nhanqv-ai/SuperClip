@@ -111,6 +111,7 @@ public struct ClipRowView: View {
     public let isSelected: Bool
     public var onSelect: ((ClipItem) -> Void)?
     public var onTogglePin: ((ClipItem) -> Void)?
+    public var onToggleMask: ((ClipItem) -> Void)?
     public var onCopy: ((ClipItem) -> Void)?
     public var onDelete: ((ClipItem) -> Void)?
 
@@ -124,6 +125,7 @@ public struct ClipRowView: View {
         isSelected: Bool = false,
         onSelect: ((ClipItem) -> Void)? = nil,
         onTogglePin: ((ClipItem) -> Void)? = nil,
+        onToggleMask: ((ClipItem) -> Void)? = nil,
         onCopy: ((ClipItem) -> Void)? = nil,
         onDelete: ((ClipItem) -> Void)? = nil
     ) {
@@ -133,6 +135,7 @@ public struct ClipRowView: View {
         self.isSelected = isSelected
         self.onSelect = onSelect
         self.onTogglePin = onTogglePin
+        self.onToggleMask = onToggleMask
         self.onCopy = onCopy
         self.onDelete = onDelete
     }
@@ -180,6 +183,10 @@ public struct ClipRowView: View {
                 ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                 onTogglePin?(item)
             }
+            Button(item.isMasked ? LocalizationManager.shared.tr(.revealClip) : LocalizationManager.shared.tr(.maskClip)) {
+                ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
+                onToggleMask?(item)
+            }
             Button(LocalizationManager.shared.tr(.copyClip)) {
                 ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                 if let onCopy = onCopy {
@@ -199,6 +206,9 @@ public struct ClipRowView: View {
     // MARK: - Tooltip Helper
 
     public static func textTooltip(for item: ClipItem) -> String {
+        if item.isMasked {
+            return "••••••••"
+        }
         guard item.contentType == .text else { return "" }
         let raw = item.textContent ?? item.displayTitle
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -221,6 +231,9 @@ public struct ClipRowView: View {
     // MARK: - Row Content Text
 
     public static func formatContentText(for item: ClipItem) -> String {
+        if item.isMasked {
+            return "••••••••"
+        }
         switch item.contentType {
         case .text:
             if let text = item.textContent, !text.isEmpty {
@@ -270,6 +283,24 @@ public struct ClipRowView: View {
                 .buttonStyle(.plain)
                 .help(LocalizationManager.shared.tr(.deleteClip))
 
+                // Compact Mask / Reveal Button (adjacent to Pin button)
+                Button(action: {
+                    ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
+                    onToggleMask?(item)
+                }) {
+                    Image(systemName: item.isMasked ? "eye" : "eye.slash")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(item.isMasked ? .accentColor : .secondary)
+                        .frame(width: 18, height: 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(item.isMasked ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.12))
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(item.isMasked ? LocalizationManager.shared.tr(.revealClip) : LocalizationManager.shared.tr(.maskClip))
+
                 // Compact Pin / Unpin Button (on the right - maintains position with static pin)
                 Button(action: {
                     ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
@@ -288,12 +319,25 @@ public struct ClipRowView: View {
                 .buttonStyle(.plain)
                 .help(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip))
             } else {
+                if item.isMasked {
+                    Image(systemName: "eye")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 18, height: 18)
+                        .contentShape(Rectangle())
+                        .help(LocalizationManager.shared.tr(.revealClip))
+                        .onTapGesture {
+                            ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
+                            onToggleMask?(item)
+                        }
+                }
                 if item.isPinned {
                     Image(systemName: "pin.fill")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.accentColor)
                         .frame(width: 18, height: 18)
                         .contentShape(Rectangle())
+                        .help(LocalizationManager.shared.tr(.unpinClip))
                         .onTapGesture {
                             ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                             onTogglePin?(item)
