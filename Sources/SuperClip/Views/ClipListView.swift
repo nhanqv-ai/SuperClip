@@ -155,15 +155,10 @@ public struct ClipListView: View {
                 if !pinnedItems.isEmpty {
                     pinnedSectionHeader
 
-                    ForEach(Array(pinnedItems.enumerated()), id: \.element.id) { index, item in
-                        let shortcut = ClipShortcutMapper.shortcutIndex(
-                            isPinned: true,
-                            indexInSection: index,
-                            pinnedCount: pinnedItems.count
-                        )
+                    ForEach(Array(pinnedItems.enumerated()), id: \.element.id) { _, item in
                         ClipRowView(
                             item: item,
-                            shortcutIndex: shortcut,
+                            shortcutIndex: nil,
                             thumbnailURL: thumbnailURLProvider?(item),
                             isSelected: item.id == selectedItemId,
                             onSelect: onSelect,
@@ -179,15 +174,10 @@ public struct ClipListView: View {
                 if !recentItems.isEmpty {
                     recentSectionHeader
 
-                    ForEach(Array(recentItems.enumerated()), id: \.element.id) { index, item in
-                        let shortcut = ClipShortcutMapper.shortcutIndex(
-                            isPinned: false,
-                            indexInSection: index,
-                            pinnedCount: pinnedItems.count
-                        )
+                    ForEach(Array(recentItems.enumerated()), id: \.element.id) { _, item in
                         ClipRowView(
                             item: item,
-                            shortcutIndex: shortcut,
+                            shortcutIndex: nil,
                             thumbnailURL: thumbnailURLProvider?(item),
                             isSelected: item.id == selectedItemId,
                             onSelect: onSelect,

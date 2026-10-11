@@ -15,10 +15,7 @@
 - **Dual Presentation**:
   - **Menu Bar Popover**: Click the status item in the menu bar to review recent clips.
   - **Global Floating Panel**: Press `Option + V` anywhere on macOS to summon a floating panel centered at your mouse cursor.
-- **Differentiated Shortcuts**:
-  - **Pinned Clips**: Numbered independently from 1 to 9 with `Option + 1` .. `Option + 9` (`⌥ 1` .. `⌥ 9`).
-  - **Recent History**: Numbered independently from 1 to 9 with `Command + 1` .. `Command + 9` (`⌘ 1` .. `⌘ 9`).
-  - **Bare Number Navigation**: Press `1..9` directly when list is focused.
+- **Quick & Intuitive Selection**: Click any clip to copy it immediately back to your pasteboard and dismiss the panel, or navigate using Up/Down arrow keys and press Enter.
 - **Multi-Language Support**:
   - Full dynamic runtime translation without restarting: English, Vietnamese (Tiếng Việt), Simplified Chinese (简体中文), Japanese (日本語), Korean (한국어), Spanish (Español), French (Français), German (Deutsch), and System Default.
 - **Text & Image Clip Support**: Captures both plain text and copied images with dimensions (`[Image] 1920x1080` / `[Ảnh] 1920x1080`).
@@ -32,9 +29,6 @@
 | Shortcut | Action | Scope |
 | :--- | :--- | :--- |
 | `Option + V` | Summon Floating Panel at cursor position | Global |
-| `Option + 1..9` | Instantly copy corresponding Pinned item | Inside Panel |
-| `Command + 1..9` | Instantly copy corresponding Recent item | Inside Panel |
-| `1..9` (bare) | Instantly copy corresponding Recent item | Inside Panel (search blurred) |
 | `Up / Down Arrow` | Navigate through items | Inside Panel |
 | `Return / Enter` | Copy selected item and dismiss | Inside Panel |
 | `Command + ,` | Open Preferences window | Inside Panel / Menu |
@@ -101,10 +95,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Hai chế độ hiển thị linh hoạt**:
   - **Menu Bar Popover**: Nhấn vào icon trên thanh menu để xem danh sách clipboard.
   - **Cửa sổ nổi toàn cục (Floating Panel)**: Nhấn `Option + V` ở bất kỳ ứng dụng nào để mở cửa sổ chọn nhanh ngay tại vị trí con trỏ chuột.
-- **Phân biệt phím tắt riêng biệt**:
-  - **Mục đã ghim (Pinned)**: Đánh số độc lập từ 1 đến 9 với phím tắt `Option + 1` .. `Option + 9` (`⌥ 1` .. `⌥ 9`).
-  - **Lịch sử thường (Recent)**: Đánh số độc lập từ 1 đến 9 với phím tắt `Command + 1` .. `Command + 9` (`⌘ 1` .. `⌘ 9`).
-  - **Phím số trực tiếp**: Bấm số `1..9` khi không nhập tìm kiếm để chọn nhanh mục tương ứng.
+- **Chọn nhanh và trực quan**: Nhấp chuột vào bất kỳ mục nào để sao chép ngay vào clipboard và tự động đóng cửa sổ, hoặc dùng phím Mũi tên Lên/Xuống và bấm Enter.
 - **Hỗ trợ đa ngôn ngữ**:
   - Thay đổi ngôn ngữ tức thì trong cài đặt: Tiếng Việt, Tiếng Anh, Tiếng Trung, Tiếng Nhật, Tiếng Hàn, Tiếng Tây Ban Nha, Tiếng Pháp, Tiếng Đức và Mặc định theo hệ điều hành.
 - **Hỗ trợ văn bản và hình ảnh**: Ghi nhận cả văn bản thuần và ảnh chụp màn hình kèm thông số kích thước (`[Ảnh] 1920x1080`).
@@ -118,9 +109,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | Phím tắt | Thao tác | Phạm vi |
 | :--- | :--- | :--- |
 | `Option + V` | Mở cửa sổ nổi chọn clipboard tại vị trí chuột | Toàn hệ thống |
-| `Option + 1..9` | Chọn và sao chép mục đã ghim tương ứng | Trong cửa sổ |
-| `Command + 1..9` | Chọn và sao chép mục lịch sử thường tương ứng | Trong cửa sổ |
-| `1..9` (phím số) | Chọn và sao chép mục lịch sử khi không focus tìm kiếm | Trong cửa sổ |
 | `Mũi tên Lên / Xuống` | Di chuyển giữa các mục clipboard | Trong cửa sổ |
 | `Return / Enter` | Chọn sao chép mục đang chọn và đóng cửa sổ | Trong cửa sổ |
 | `Command + ,` | Mở cửa sổ Cài đặt (Preferences) | Trong cửa sổ / Menu |

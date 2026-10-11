@@ -257,16 +257,6 @@ public struct ClipRowView: View {
                         onSelect?(item)
                     }
             }
-
-            if let index = shortcutIndex, (1...9).contains(index) {
-                Text("\(item.isPinned ? "⌥" : "⌘") \(index)")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundColor(item.isPinned ? .accentColor.opacity(0.9) : .secondary.opacity(0.8))
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        onSelect?(item)
-                    }
-            }
         }
     }
 

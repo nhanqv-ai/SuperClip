@@ -301,24 +301,6 @@ public struct MainContentView: View {
                 return nil
             }
 
-            // Section shortcut handling:
-            // Option + 1..9 for Pinned items
-            // Command + 1..9 (or bare 1..9) for Recent items
-            let searchFieldHasFocus = (selectedIndex == nil && !searchText.isEmpty)
-            if let resolved = ShortcutNavigator.parseSectionShortcut(
-                from: event,
-                searchFieldHasFocus: searchFieldHasFocus
-            ) {
-                if let item = ShortcutNavigator.targetItem(
-                    forSectionShortcut: resolved,
-                    pinnedItems: partitionedClips.pinned,
-                    recentItems: partitionedClips.recent
-                ) {
-                    selectItem(item)
-                    return nil
-                }
-            }
-
             return event
         }
     }
