@@ -91,9 +91,9 @@ public struct MainContentView: View {
                 contentSection
                 Divider()
                     .opacity(0.6)
-                footerBar
+                bottomMenuActions
             }
-            .frame(width: 360, height: 480)
+            .frame(width: 380, height: 600)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(.regularMaterial)
@@ -228,45 +228,46 @@ public struct MainContentView: View {
         )
     }
 
-    // MARK: - Footer Bar
+    // MARK: - Bottom Menu Actions (CopyClip Style)
 
-    private var footerBar: some View {
-        HStack {
-            if !partitionedClips.recent.isEmpty {
-                Button(action: { storageManager.clearUnpinnedHistory() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 10))
-                        Text("Clear History")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 2)
-                    .padding(.horizontal, 4)
-                }
-                .buttonStyle(.plain)
-                .help("Clear unpinned history clips")
+    private var bottomMenuActions: some View {
+        VStack(spacing: 1) {
+            menuActionRow(title: "Clear All History", shortcut: nil) {
+                storageManager.clearUnpinnedHistory()
             }
-
-            Spacer()
-
-            HStack(spacing: 8) {
-                Text("1..9 Copy")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.8))
-                Text("Up/Down Select")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.8))
-                Text("Return Copy")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.8))
-                Text("Esc Close")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.8))
+            menuActionRow(title: "Preferences...", shortcut: "⌘ ,") {
+                if let onOpen = onOpenSettings {
+                    onOpen()
+                } else {
+                    SettingsWindowController.shared?.showSettings()
+                }
+            }
+            menuActionRow(title: "Quit", shortcut: "⌘ Q") {
+                NSApp.terminate(nil)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+    }
+
+    private func menuActionRow(title: String, shortcut: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(.primary)
+                Spacer()
+                if let shortcut = shortcut {
+                    Text(shortcut)
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundColor(.secondary.opacity(0.8))
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(MenuRowButtonStyle())
     }
 
     // MARK: - Actions & Keyboard Interception
@@ -308,6 +309,12 @@ public struct MainContentView: View {
                 } else {
                     SettingsWindowController.shared?.showSettings()
                 }
+                return nil
+            }
+
+            // Command + Q (12): Quit SuperClip
+            if event.modifierFlags.contains(.command) && (event.charactersIgnoringModifiers == "q" || event.keyCode == 12) {
+                NSApp.terminate(nil)
                 return nil
             }
 
@@ -356,5 +363,21 @@ public struct MainContentView: View {
             NSEvent.removeMonitor(monitor)
             localKeyMonitor = nil
         }
+    }
+}
+
+/// Native menu-like hover button style for bottom action rows.
+private struct MenuRowButtonStyle: ButtonStyle {
+    @State private var isHovered: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(configuration.isPressed ? Color.accentColor.opacity(0.2) : (isHovered ? Color.accentColor.opacity(0.12) : Color.clear))
+            )
+            .onHover { hovering in
+                isHovered = hovering
+            }
     }
 }

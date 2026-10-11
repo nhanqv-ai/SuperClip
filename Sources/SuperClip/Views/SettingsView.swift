@@ -99,18 +99,20 @@ public struct KeyCombinationHelper {
     }
 }
 
-/// SettingsView provides configuration for SuperClip preferences (Features 29 & 30):
-/// - Capacity adjustment UI: Slider and Stepper / Text field (range: 10 to 500 items, default 100)
-/// - Explanatory note: "Pinned clips are permanently protected and do not count toward this limit."
-/// - Hotkey customization UI: displays current hotkey, key combination recorder and manual pickers
-/// - Dynamic binding and live registration on HotKeyManager and StorageManager
-/// - Flat design SF Symbols; strictly 0 emojis invariant across all UI strings and icons
+/// SettingsView provides configuration for SuperClip preferences matching
+/// the native macOS CopyClip preferences design:
+/// - Top icon-above-label tabs: General, Ignored Apps, Clips Management, About
+/// - Rounded card containers (RoundedRectangle(cornerRadius: 10))
+/// - Clippings card: Remember [ X ] clippings, Display [ Y ] clippings
+/// - Options card: Start at startup, Record history, Hotkey customization (default Option + V)
+/// - Underlying persistence via StorageManager.settings and Carbon HotKeyManager
+/// - Strict 0-emoji invariant across all UI strings and icons
 public struct SettingsView: View {
     @ObservedObject public var storageManager: StorageManager
     public var hotKeyManager: HotKeyManaging
     public var onDismiss: (() -> Void)?
 
-    @State private var selectedTab: SettingsTab = .hotkey
+    @State private var selectedTab: SettingsTab = .general
     @State private var isRecordingHotKey: Bool = false
     @State private var localKeyMonitor: Any? = nil
     @State private var showingClearConfirmation: Bool = false
@@ -118,19 +120,19 @@ public struct SettingsView: View {
     @State private var hotKeyWarningMessage: String? = nil
 
     public enum SettingsTab: String, CaseIterable, Identifiable {
-        case hotkey = "HotKey"
-        case retention = "Retention"
-        case storage = "Storage"
         case general = "General"
+        case ignoredApps = "Ignored Apps"
+        case clipsManagement = "Clips Management"
+        case about = "About"
 
         public var id: String { rawValue }
 
         public var iconName: String {
             switch self {
-            case .hotkey: return "keyboard"
-            case .retention: return "slider.horizontal.3"
-            case .storage: return "internaldrive"
-            case .general: return "gearshape"
+            case .general: return "gear"
+            case .ignoredApps: return "eye.slash"
+            case .clipsManagement: return "doc.on.clipboard"
+            case .about: return "info.circle"
             }
         }
     }
@@ -148,138 +150,253 @@ public struct SettingsView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            headerBar
-            tabPicker
+            topTabBar
             Divider()
-            ScrollView {
-                VStack(spacing: 16) {
-                    switch selectedTab {
-                    case .hotkey:
-                        hotKeySection
-                    case .retention:
-                        retentionSection
-                    case .storage:
-                        storageSection
-                    case .general:
-                        generalSection
-                    }
-                }
-                .padding(16)
-            }
+            contentArea
             Divider()
             footerBar
         }
-        .frame(width: 440, height: 340)
+        .frame(width: 460, height: 420)
         .background(Color(nsColor: .windowBackgroundColor))
         .onDisappear {
             stopRecordingHotKey()
         }
     }
 
-    // MARK: - Header Bar
+    // MARK: - Top Tab Bar (Icon above Label with Active Highlight)
 
-    private var headerBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "gearshape")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.accentColor)
-            Text("Settings")
-                .font(.system(size: 14, weight: .bold))
-            Spacer()
-            if let dismiss = onDismiss {
-                Button(action: dismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .padding(4)
+    private var topTabBar: some View {
+        HStack(spacing: 24) {
+            ForEach(SettingsTab.allCases) { tab in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        selectedTab = tab
+                    }
+                }) {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.iconName)
+                            .font(.system(size: 20, weight: .regular))
+                            .frame(height: 24)
+                        Text(tab.rawValue)
+                            .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
+                    }
+                    .foregroundColor(selectedTab == tab ? .primary : .secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(selectedTab == tab ? Color.secondary.opacity(0.15) : Color.clear)
+                    )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Close Settings")
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Tab Picker
+    // MARK: - Content Area
 
-    private var tabPicker: some View {
-        Picker("Category", selection: $selectedTab) {
-            ForEach(SettingsTab.allCases) { tab in
-                Label(tab.rawValue, systemImage: tab.iconName).tag(tab)
+    @ViewBuilder
+    private var contentArea: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                switch selectedTab {
+                case .general:
+                    generalTabContent
+                case .ignoredApps:
+                    ignoredAppsTabContent
+                case .clipsManagement:
+                    clipsManagementTabContent
+                case .about:
+                    aboutTabContent
+                }
             }
+            .padding(16)
         }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
     }
 
-    // MARK: - HotKey Section (Feature 29)
+    // MARK: - General Tab Content (CopyClip Cards)
 
-    private var hotKeySection: some View {
+    private var generalTabContent: some View {
+        VStack(spacing: 14) {
+            clippingsCard
+            optionsCard
+        }
+    }
+
+    // MARK: - Clippings Card
+
+    private var clippingsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Global Hotkey Customization")
-                    .font(.system(size: 13, weight: .bold))
-                HStack(spacing: 4) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 11))
+            Text("Clippings")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.primary)
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Text("Remember:")
+                        .font(.system(size: 12))
+                        .frame(width: 80, alignment: .leading)
+
+                    TextField("", value: Binding(
+                        get: { storageManager.capacity },
+                        set: { storageManager.capacity = max(10, min($0, 500)) }
+                    ), formatter: NumberFormatter())
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 60)
+
+                    Stepper("", value: Binding(
+                        get: { storageManager.capacity },
+                        set: { storageManager.capacity = max(10, min($0, 500)) }
+                    ), in: 10...500, step: 10)
+                    .labelsHidden()
+
+                    Text("clippings")
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
-                    Text("Summons the floating clipboard panel centered at the mouse cursor.")
-                        .font(.system(size: 11))
+                }
+
+                HStack(spacing: 8) {
+                    Text("Display:")
+                        .font(.system(size: 12))
+                        .frame(width: 80, alignment: .leading)
+
+                    TextField("", value: Binding(
+                        get: { storageManager.settings.displayCapacity },
+                        set: { newDisp in
+                            var s = storageManager.settings
+                            s.displayCapacity = max(5, min(newDisp, 200))
+                            storageManager.settings = s
+                        }
+                    ), formatter: NumberFormatter())
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 60)
+
+                    Stepper("", value: Binding(
+                        get: { storageManager.settings.displayCapacity },
+                        set: { newDisp in
+                            var s = storageManager.settings
+                            s.displayCapacity = max(5, min(newDisp, 200))
+                            storageManager.settings = s
+                        }
+                    ), in: 5...200, step: 5)
+                    .labelsHidden()
+
+                    Text("clippings")
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
             }
 
-            VStack(spacing: 8) {
-                HStack {
-                    Text("Current Hotkey:")
-                        .font(.system(size: 12, weight: .medium))
-                    Spacer()
+            Text("Pinned clips are permanently protected and do not count toward this limit.")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .padding(.top, 2)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+
+    // MARK: - Options Card
+
+    private var optionsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Options")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.primary)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("Start SuperClip at system startup", isOn: Binding(
+                    get: { storageManager.settings.launchAtLogin },
+                    set: { newVal in
+                        var s = storageManager.settings
+                        s.launchAtLogin = newVal
+                        storageManager.settings = s
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .font(.system(size: 12))
+
+                Toggle("Record clipboard history", isOn: Binding(
+                    get: { storageManager.settings.recordClipboardHistory },
+                    set: { newVal in
+                        var s = storageManager.settings
+                        s.recordClipboardHistory = newVal
+                        storageManager.settings = s
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .font(.system(size: 12))
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text("Shortcut:")
+                        .font(.system(size: 12))
+                        .frame(width: 80, alignment: .leading)
+
                     Text(KeyCombinationHelper.formattedShortcut(
                         keyCode: storageManager.settings.hotKeyKeyCode,
                         modifiers: storageManager.settings.hotKeyModifiers
                     ))
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 10)
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(nsColor: .controlBackgroundColor))
-                    .cornerRadius(6)
+                    .background(Color(nsColor: .textBackgroundColor))
+                    .cornerRadius(5)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 5)
+                            .stroke(Color(nsColor: .separatorColor), lineWidth: 0.8)
                     )
-                }
 
-                HStack {
                     if isRecordingHotKey {
-                        Text("Press desired key combination...")
-                            .font(.system(size: 12, weight: .medium))
+                        Text("Press shortcut...")
+                            .font(.system(size: 11))
                             .foregroundColor(.accentColor)
-                        Spacer()
+
                         Button("Cancel") {
                             stopRecordingHotKey()
                         }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     } else {
-                        Button("Record Shortcut") {
+                        Button("Record") {
                             startRecordingHotKey()
                         }
-                        .buttonStyle(.borderedProminent)
-                        Spacer()
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
+
+                    Menu("Presets") {
+                        Button("Option + V (Default)") {
+                            applyHotKey(keyCode: 9, modifiers: UInt32(optionKey))
+                        }
+                        Button("Cmd + Shift + V") {
+                            applyHotKey(keyCode: 9, modifiers: UInt32(cmdKey | shiftKey))
+                        }
+                        Button("Option + Space") {
+                            applyHotKey(keyCode: 49, modifiers: UInt32(optionKey))
+                        }
+                    }
+                    .menuStyle(.borderedButton)
+                    .controlSize(.small)
                 }
-            }
-            .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-            .cornerRadius(8)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Modifier Flags")
-                    .font(.system(size: 12, weight: .semibold))
-
-                HStack(spacing: 14) {
-                    Toggle("Option (Alt)", isOn: Binding(
+                HStack(spacing: 12) {
+                    Toggle("Option", isOn: Binding(
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(optionKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(optionKey), enable: $0) }
                     ))
@@ -295,41 +412,20 @@ public struct SettingsView: View {
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(shiftKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(shiftKey), enable: $0) }
                     ))
+
+                    Picker("", selection: Binding(
+                        get: { storageManager.settings.hotKeyKeyCode },
+                        set: { updateKeyCode($0) }
+                    )) {
+                        ForEach(KeyCombinationHelper.standardKeys) { item in
+                            Text(item.name).tag(item.code)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 75)
                 }
                 .toggleStyle(.checkbox)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Key Code")
-                    .font(.system(size: 12, weight: .semibold))
-                Picker("Key", selection: Binding(
-                    get: { storageManager.settings.hotKeyKeyCode },
-                    set: { updateKeyCode($0) }
-                )) {
-                    ForEach(KeyCombinationHelper.standardKeys) { item in
-                        Text(item.name).tag(item.code)
-                    }
-                }
-                .pickerStyle(.menu)
-                .frame(width: 140)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Quick Presets")
-                    .font(.system(size: 12, weight: .semibold))
-                HStack(spacing: 8) {
-                    Button("Option + V (Default)") {
-                        applyHotKey(keyCode: 9, modifiers: UInt32(optionKey))
-                    }
-                    Button("Cmd + Shift + V") {
-                        applyHotKey(keyCode: 9, modifiers: UInt32(cmdKey | shiftKey))
-                    }
-                    Button("Option + Space") {
-                        applyHotKey(keyCode: 49, modifiers: UInt32(optionKey))
-                    }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .font(.system(size: 11))
             }
 
             if let warning = hotKeyWarningMessage {
@@ -342,115 +438,91 @@ public struct SettingsView: View {
                 }
             }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
-    // MARK: - Retention Section (Feature 30)
+    // MARK: - Ignored Apps Tab Content
 
-    private var retentionSection: some View {
+    private var ignoredAppsTabContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("History Retention Capacity")
-                    .font(.system(size: 13, weight: .bold))
-                HStack(spacing: 4) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    Text("Maximum number of unpinned history clips retained in local storage.")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                }
-            }
+            Text("Ignored Applications")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.primary)
 
-            VStack(spacing: 10) {
+            Text("SuperClip will not record clippings copied from applications in this list.")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+
+            VStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color(nsColor: .textBackgroundColor))
+                    .frame(height: 120)
+                    .overlay(
+                        VStack(spacing: 6) {
+                            Image(systemName: "eye.slash")
+                                .font(.system(size: 24))
+                                .foregroundColor(.secondary)
+                            Text("No ignored applications")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Text("Clipboard items will be recorded from all applications.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary.opacity(0.8))
+                        }
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(Color(nsColor: .separatorColor), lineWidth: 0.8)
+                    )
+
                 HStack {
-                    Text("Retention Capacity:")
-                        .font(.system(size: 12, weight: .medium))
-                    Spacer()
-                    Stepper(
-                        value: Binding(
-                            get: { storageManager.capacity },
-                            set: { storageManager.capacity = max(10, min($0, 500)) }
-                        ),
-                        in: 10...500,
-                        step: 10
-                    ) {
-                        Text("\(storageManager.capacity) clips")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
-                            .foregroundColor(.accentColor)
+                    Button(action: {}) {
+                        Image(systemName: "plus")
+                            .frame(width: 18, height: 18)
                     }
-                }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
 
-                Slider(
-                    value: Binding(
-                        get: { Double(storageManager.capacity) },
-                        set: { storageManager.capacity = Int($0) }
-                    ),
-                    in: 10...500,
-                    step: 10
-                ) {
-                    Text("Capacity Slider")
-                } minimumValueLabel: {
-                    Text("10")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                } maximumValueLabel: {
-                    Text("500")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                    Button(action: {}) {
+                        Image(systemName: "minus")
+                            .frame(width: 18, height: 18)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(true)
+
+                    Spacer()
                 }
             }
-            .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-            .cornerRadius(8)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Presets")
-                    .font(.system(size: 12, weight: .semibold))
-                HStack(spacing: 8) {
-                    Button("25") { storageManager.capacity = 25 }
-                    Button("50") { storageManager.capacity = 50 }
-                    Button("100 (Default)") { storageManager.capacity = 100 }
-                    Button("250") { storageManager.capacity = 250 }
-                    Button("500") { storageManager.capacity = 500 }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: "pin.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(.accentColor)
-                    Text("Pin Protection Guarantee")
-                        .font(.system(size: 12, weight: .semibold))
-                }
-                Text("Pinned clips are permanently protected and do not count toward this limit.")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-            }
-            .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.3))
-            .cornerRadius(6)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
-    // MARK: - Storage Section
+    // MARK: - Clips Management Tab Content
 
-    private var storageSection: some View {
+    private var clipsManagementTabContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Storage Statistics & Maintenance")
-                    .font(.system(size: 13, weight: .bold))
-                HStack(spacing: 4) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    Text("Overview of local clipboard storage statistics and maintenance actions.")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                }
-            }
+            Text("Clips Management")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.primary)
 
             VStack(spacing: 6) {
                 metricRow(label: "Total Stored Clips", value: "\(storageManager.items.count)")
@@ -460,10 +532,10 @@ public struct SettingsView: View {
             }
             .padding(10)
             .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-            .cornerRadius(8)
+            .cornerRadius(6)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Storage Location")
+                Text("Storage Location:")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
                 Text(storageManager.baseDirectory.path)
@@ -507,78 +579,75 @@ public struct SettingsView: View {
                 .buttonStyle(.bordered)
             }
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
-    // MARK: - General Section
+    // MARK: - About Tab Content
 
-    private var generalSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("General Preferences")
-                    .font(.system(size: 13, weight: .bold))
-                HStack(spacing: 4) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    Text("Application configuration and defaults.")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+    private var aboutTabContent: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "doc.on.clipboard")
+                .font(.system(size: 40))
+                .foregroundColor(.accentColor)
+                .padding(.top, 8)
+
+            Text("SuperClip")
+                .font(.system(size: 18, weight: .bold))
+
+            Text("Version 1.0.0")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+
+            Text("Native ultra-compact clipboard manager for macOS inspired by CopyClip.")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+
+            Divider()
+
+            HStack(spacing: 16) {
+                Button(action: { showingResetConfirmation = true }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.counterclockwise")
+                        Text("Reset All to Defaults")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .confirmationDialog(
+                    "Reset settings to defaults?",
+                    isPresented: $showingResetConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Reset Defaults", role: .destructive) {
+                        resetToDefaults()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This resets hotkey to Option+V and capacity to 100 items.")
                 }
             }
-
-            VStack(spacing: 8) {
-                HStack {
-                    Text("Pasteboard Poll Interval:")
-                        .font(.system(size: 12, weight: .medium))
-                    Spacer()
-                    Text("\(storageManager.settings.pollIntervalMs) ms")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                }
-
-                Divider()
-
-                HStack {
-                    Text("Thumbnail Downscale Target:")
-                        .font(.system(size: 12, weight: .medium))
-                    Spacer()
-                    Text("Max \(storageManager.settings.maxThumbnailPixelSize) px")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                }
-            }
-            .padding(10)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-            .cornerRadius(8)
-
-            Button(action: { showingResetConfirmation = true }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text("Reset All to Defaults")
-                }
-            }
-            .buttonStyle(.bordered)
-            .confirmationDialog(
-                "Reset settings to defaults?",
-                isPresented: $showingResetConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Reset Defaults", role: .destructive) {
-                    resetToDefaults()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This resets hotkey to Option+V and capacity to 100 items.")
-            }
-
-            Spacer()
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("SuperClip 1.0.0")
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Native macOS clipboard manager. SF Symbols flat design. 0 emojis.")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
+            .padding(.bottom, 8)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Footer Bar

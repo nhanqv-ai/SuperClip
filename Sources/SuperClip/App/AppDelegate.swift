@@ -49,10 +49,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        floatingPanel = FloatingClipPanel(rootView: mainClipView)
+        floatingPanel = FloatingClipPanel(size: NSSize(width: 380, height: 600), rootView: mainClipView)
 
         let popoverVC = NSHostingController(rootView: mainClipView)
-        popoverVC.preferredContentSize = NSSize(width: 360, height: 480)
+        popoverVC.preferredContentSize = NSSize(width: 380, height: 600)
 
         statusItemManager = StatusItemManager(
             contentViewController: popoverVC,

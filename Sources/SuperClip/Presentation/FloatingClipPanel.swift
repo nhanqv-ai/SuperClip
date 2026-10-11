@@ -18,7 +18,7 @@ public final class FloatingClipPanel: NSPanel, FloatingPanelPresenting {
     // MARK: - Constants
 
     /// Default panel dimensions matching SuperClip presentation standards.
-    public static let defaultPanelSize = NSSize(width: 360, height: 480)
+    public static let defaultPanelSize = NSSize(width: 380, height: 600)
 
     // MARK: - Public Callbacks
 

@@ -130,7 +130,7 @@ public struct ClipListView: View {
 
     private var partitionedListView: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 6) {
+            LazyVStack(alignment: .leading, spacing: 2) {
                 // PINNED SECTION
                 if !pinnedItems.isEmpty {
                     pinnedSectionHeader
@@ -179,8 +179,8 @@ public struct ClipListView: View {
                     }
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
     }
 

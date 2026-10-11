@@ -101,8 +101,9 @@ public struct ClipThumbnailView: View {
     }
 }
 
-/// ClipRowView presents an individual clipboard item (text or image) with shortcut badge,
-/// truncated preview, metadata, pinned status indicator, selection highlight, and per-row hover action controls.
+/// ClipRowView presents an individual clipboard item (text or image) on a clean,
+/// ultra-compact single line with right-aligned shortcut indicators, hover actions,
+/// and right-click context menu matching CopyClip's minimalist aesthetic.
 public struct ClipRowView: View {
     public let item: ClipItem
     public let shortcutIndex: Int?
@@ -136,33 +137,116 @@ public struct ClipRowView: View {
     }
 
     public var body: some View {
-        HStack(spacing: 8) {
-            // Clickable main content body
+        HStack(spacing: 6) {
+            // Clickable row content body (left-aligned)
             Button(action: { onSelect?(item) }) {
-                HStack(spacing: 8) {
-                    shortcutBadge
-                    contentIconOrThumbnail
-                    contentDetails
-                    Spacer(minLength: 4)
-                }
-                .contentShape(Rectangle())
+                Text(rowContentText)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            // Trailing actions on hover / pinned indicator when idle
+            // Right-aligned trailing controls (Pin, Delete on hover, and shortcut badge)
             trailingControls
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .frame(height: 26)
         .background(backgroundFillColor)
         .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .stroke(borderStrokeColor, lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.12)) {
                 isHovered = hovering
+            }
+        }
+        .contextMenu {
+            Button(item.isPinned ? "Unpin" : "Pin") {
+                onTogglePin?(item)
+            }
+            Button("Copy") {
+                if let onCopy = onCopy {
+                    onCopy(item)
+                } else {
+                    onSelect?(item)
+                }
+            }
+            Divider()
+            Button("Delete") {
+                onDelete?(item)
+            }
+        }
+    }
+
+    // MARK: - Row Content Text
+
+    private var rowContentText: String {
+        switch item.contentType {
+        case .text:
+            if let text = item.textContent, !text.isEmpty {
+                return text.replacingOccurrences(of: "\r\n", with: " ")
+                           .replacingOccurrences(of: "\n", with: " ")
+                           .replacingOccurrences(of: "\r", with: " ")
+            }
+            return item.displayTitle
+        case .image:
+            if let w = item.imageWidth, let h = item.imageHeight, w > 0, h > 0 {
+                return "[Ảnh] \(w)x\(h)"
+            } else {
+                return "[Ảnh]"
+            }
+        }
+    }
+
+    // MARK: - Trailing Controls
+
+    @ViewBuilder
+    private var trailingControls: some View {
+        HStack(spacing: 5) {
+            if isHovered {
+                // Compact Pin / Unpin Button
+                Button(action: { onTogglePin?(item) }) {
+                    Image(systemName: item.isPinned ? "pin.fill" : "pin")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(item.isPinned ? .accentColor : .secondary)
+                        .frame(width: 18, height: 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Color.secondary.opacity(0.12))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(item.isPinned ? "Unpin clip" : "Pin clip")
+
+                // Compact Delete Button
+                Button(action: { onDelete?(item) }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.red)
+                        .frame(width: 18, height: 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Color.red.opacity(0.12))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Delete clip")
+            } else if item.isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.accentColor)
+            }
+
+            if let index = shortcutIndex, (1...9).contains(index) {
+                Text("⌘ \(index)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(.secondary.opacity(0.8))
             }
         }
     }
@@ -186,149 +270,6 @@ public struct ClipRowView: View {
             return Color(nsColor: .separatorColor).opacity(0.3)
         } else {
             return Color.clear
-        }
-    }
-
-    // MARK: - Shortcut Badge (1..9)
-
-    @ViewBuilder
-    private var shortcutBadge: some View {
-        if let index = shortcutIndex, (1...9).contains(index) {
-            Text("\(index)")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundColor(.secondary)
-                .frame(width: 18, height: 18)
-                .background(
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-                        )
-                )
-        } else {
-            Spacer()
-                .frame(width: 18, height: 18)
-        }
-    }
-
-    // MARK: - Icon / Thumbnail
-
-    @ViewBuilder
-    private var contentIconOrThumbnail: some View {
-        switch item.contentType {
-        case .text:
-            ZStack {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color.secondary.opacity(0.08))
-                Image(systemName: "doc.text")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.secondary)
-            }
-            .frame(width: 32, height: 32)
-            .overlay(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
-            )
-
-        case .image:
-            ClipThumbnailView(item: item, thumbnailURL: thumbnailURL)
-        }
-    }
-
-    // MARK: - Content Details & Metadata
-
-    private var contentDetails: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(item.displayTitle)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.primary)
-                .lineLimit(2)
-                .truncationMode(.tail)
-                .multilineTextAlignment(.leading)
-
-            Text(metadataString)
-                .font(.system(size: 10, weight: .regular))
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-        }
-    }
-
-    private var metadataString: String {
-        let relativeTime = RelativeTimeFormatter.format(item.createdAt)
-        switch item.contentType {
-        case .text:
-            let count = item.textContent?.count ?? 0
-            let countLabel = count == 1 ? "1 char" : "\(count) chars"
-            return "\(countLabel) - \(relativeTime)"
-        case .image:
-            var parts: [String] = []
-            if let w = item.imageWidth, let h = item.imageHeight, w > 0, h > 0 {
-                parts.append("\(w)x\(h)")
-            }
-            if item.byteSize > 0 {
-                parts.append(item.formattedByteSize)
-            }
-            parts.append(relativeTime)
-            return parts.joined(separator: " - ")
-        }
-    }
-
-    // MARK: - Trailing Controls & Hover Actions
-
-    @ViewBuilder
-    private var trailingControls: some View {
-        if isHovered {
-            HStack(spacing: 4) {
-                // Pin / Unpin Button
-                Button(action: { onTogglePin?(item) }) {
-                    Image(systemName: item.isPinned ? "pin.fill" : "pin")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(item.isPinned ? .accentColor : .secondary)
-                        .frame(width: 22, height: 22)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(Color.secondary.opacity(0.12))
-                        )
-                }
-                .buttonStyle(.plain)
-                .help(item.isPinned ? "Unpin clip" : "Pin clip")
-
-                // Dedicated Copy Button
-                Button(action: { onCopy?(item) }) {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .frame(width: 22, height: 22)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(Color.secondary.opacity(0.12))
-                        )
-                }
-                .buttonStyle(.plain)
-                .help("Copy to clipboard")
-
-                // Delete Button
-                Button(action: { onDelete?(item) }) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.red)
-                        .frame(width: 22, height: 22)
-                        .background(
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(Color.red.opacity(0.12))
-                        )
-                }
-                .buttonStyle(.plain)
-                .help("Delete clip")
-            }
-        } else {
-            if item.isPinned {
-                Image(systemName: "pin.fill")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.accentColor)
-                    .padding(.trailing, 4)
-            }
         }
     }
 }
