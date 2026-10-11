@@ -275,5 +275,35 @@ public struct SettingsViewTests {
         hostingNorm.frame = NSRect(x: 0, y: 0, width: 490, height: 475)
         TestHarness.assertEqual(hostingNorm.frame.width, 490, "Standard view width is 490")
         TestHarness.assertEqual(hostingNorm.frame.height, 475, "Standard view height is 475")
+
+        // 11. Modifier Validation & Hotkey Combination Formats
+        TestHarness.assertFalse(KeyCombinationHelper.isValidHotKey(modifiers: 0), "0 modifiers is invalid")
+        TestHarness.assertFalse(KeyCombinationHelper.isValidHotKey(modifiers: UInt32(shiftKey)), "Shift-only modifier is invalid")
+        TestHarness.assertTrue(KeyCombinationHelper.isValidHotKey(modifiers: UInt32(optionKey)), "Option modifier is valid")
+        TestHarness.assertTrue(KeyCombinationHelper.isValidHotKey(modifiers: UInt32(cmdKey)), "Command modifier is valid")
+        TestHarness.assertTrue(KeyCombinationHelper.isValidHotKey(modifiers: UInt32(controlKey)), "Control modifier is valid")
+        TestHarness.assertTrue(KeyCombinationHelper.isValidHotKey(modifiers: UInt32(cmdKey | shiftKey)), "Command + Shift modifier is valid")
+        TestHarness.assertTrue(KeyCombinationHelper.isValidHotKey(modifiers: UInt32(optionKey | controlKey)), "Option + Control modifier is valid")
+
+        let cmdShiftV = KeyCombinationHelper.formattedShortcut(keyCode: 9, modifiers: UInt32(cmdKey | shiftKey))
+        TestHarness.assertEqual(cmdShiftV, "Shift + Command + V", "Command + Shift + V format matches")
+
+        let ctrlOptSpace = KeyCombinationHelper.formattedShortcut(keyCode: 49, modifiers: UInt32(controlKey | optionKey))
+        TestHarness.assertEqual(ctrlOptSpace, "Control + Option + Space", "Control + Option + Space format matches")
+
+        let cmdReturn = KeyCombinationHelper.formattedShortcut(keyCode: 36, modifiers: UInt32(cmdKey))
+        TestHarness.assertEqual(cmdReturn, "Command + Return", "Command + Return format matches")
+
+        // 12. Window Delegate Lifecycle & Re-creation on Close
+        if let w = winCtrl.window {
+            winCtrl.windowWillClose(Notification(name: NSWindow.willCloseNotification, object: w))
+            TestHarness.assertNotNil(w.contentViewController, "ContentViewController is re-instantiated on windowWillClose")
+            TestHarness.assertEqual(w.contentViewController?.preferredContentSize.width, 490, "Re-instantiated preferred width is 490")
+            TestHarness.assertEqual(w.contentViewController?.preferredContentSize.height, 475, "Re-instantiated preferred height is 475")
+        }
+
+        // Test posting willCloseNotification and willResignActiveNotification safely
+        NotificationCenter.default.post(name: NSWindow.willCloseNotification, object: winCtrl.window)
+        NotificationCenter.default.post(name: NSApplication.willResignActiveNotification, object: NSApp)
     }
 }

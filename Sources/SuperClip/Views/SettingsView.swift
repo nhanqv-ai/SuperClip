@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import Carbon
 import UniformTypeIdentifiers
+import Combine
 import SuperClipCore
 
 /// AppSettings convenience extension for specification naming compatibility.
@@ -205,6 +206,12 @@ public struct SettingsView: View {
         .onDisappear {
             stopRecordingHotKey()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { _ in
+            stopRecordingHotKey()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willResignActiveNotification)) { _ in
+            stopRecordingHotKey()
+        }
     }
 
     // MARK: - Top Tab Bar (Icon above Label with Active Highlight)
@@ -213,6 +220,7 @@ public struct SettingsView: View {
         HStack(spacing: 20) {
             ForEach(SettingsTab.allCases) { tab in
                 Button(action: {
+                    hotKeyWarningMessage = nil
                     stopRecordingHotKey()
                     withAnimation(.easeInOut(duration: 0.15)) {
                         selectedTab = tab
@@ -594,6 +602,7 @@ public struct SettingsView: View {
         Group {
             if isRecordingHotKey {
                 Button(LocalizationManager.shared.tr(.cancelButton)) {
+                    hotKeyWarningMessage = nil
                     stopRecordingHotKey()
                 }
                 .buttonStyle(.bordered)
@@ -1162,10 +1171,12 @@ public struct SettingsView: View {
 
     private func startRecordingHotKey() {
         stopRecordingHotKey()
+        hotKeyWarningMessage = nil
         isRecordingHotKey = true
 
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53 {
+                hotKeyWarningMessage = nil
                 stopRecordingHotKey()
                 return nil
             }
@@ -1181,8 +1192,10 @@ public struct SettingsView: View {
                 applyHotKey(keyCode: code, modifiers: carbonFlags)
                 stopRecordingHotKey()
                 return nil
+            } else {
+                hotKeyWarningMessage = "At least one modifier (Option, Command, Control) is required."
+                return nil
             }
-            return event
         }
     }
 

@@ -117,6 +117,7 @@ public final class SettingsWindowController: NSWindowController, NSWindowDelegat
     // MARK: - NSWindowDelegate
 
     public func windowWillClose(_ notification: Notification) {
-        // Window closed by user; preserved in memory for subsequent presentations
+        // Window closed by user; reset content view so any recording state or monitors are cleanly torn down
+        setupContentView()
     }
 }
