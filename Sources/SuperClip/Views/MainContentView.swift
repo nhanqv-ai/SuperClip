@@ -133,8 +133,6 @@ public struct MainContentView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.primary)
 
-            itemCountBadge
-
             Spacer()
 
             Button(action: {
@@ -166,24 +164,6 @@ public struct MainContentView: View {
         .padding(.horizontal, 14)
         .padding(.top, 10)
         .padding(.bottom, 6)
-    }
-
-    private var itemCountBadge: some View {
-        Group {
-            if isSearching || visibleCount < totalCount {
-                Text(LocalizationManager.shared.tr(.ofCount(visibleCount, totalCount)))
-            } else {
-                Text("\(totalCount)")
-            }
-        }
-        .font(.system(size: 10, weight: .medium))
-        .foregroundColor(.secondary)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(
-            Capsule()
-                .fill(Color(nsColor: .quaternaryLabelColor))
-        )
     }
 
     // MARK: - Search Bar Section
