@@ -204,8 +204,6 @@ public struct ClipListView: View {
                 .font(.system(size: 10, weight: .bold))
                 .foregroundColor(.secondary)
 
-            Spacer()
-
             Text("\(pinnedItems.count)")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.secondary.opacity(0.8))
@@ -215,6 +213,8 @@ public struct ClipListView: View {
                     Capsule()
                         .fill(Color(nsColor: .quaternaryLabelColor))
                 )
+
+            Spacer()
         }
         .padding(.horizontal, 4)
         .padding(.top, 4)
