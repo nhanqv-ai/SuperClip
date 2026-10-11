@@ -28,24 +28,32 @@ public struct LocalizationTests {
         TestHarness.assertEqual(loc.tr(.clearHistory), "Xóa lịch sử", "Clear history translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.languageLabel), "Ngôn ngữ:", "Language label translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.tabGeneral), "Cài đặt chung", "Tab General translated to Vietnamese")
+        TestHarness.assertEqual(loc.tr(.authorLabel), "Tác giả", "Author label translated to Vietnamese")
+        TestHarness.assertEqual(loc.tr(.licenseLabel), "Giấy phép", "License label translated to Vietnamese")
 
         loc.setLanguage(.simplifiedChinese)
         TestHarness.assertEqual(loc.effectiveLanguage, .simplifiedChinese, "Effective language is Simplified Chinese")
         TestHarness.assertEqual(loc.tr(.searchPlaceholder), "搜索剪贴板...", "Search placeholder translated to Chinese")
         TestHarness.assertEqual(loc.tr(.pinnedSection), "已置顶", "Pinned section translated to Chinese")
         TestHarness.assertEqual(loc.tr(.languageLabel), "语言:", "Language label translated to Chinese")
+        TestHarness.assertEqual(loc.tr(.authorLabel), "作者", "Author label translated to Chinese")
+        TestHarness.assertEqual(loc.tr(.licenseLabel), "许可证", "License label translated to Chinese")
 
         loc.setLanguage(.japanese)
         TestHarness.assertEqual(loc.effectiveLanguage, .japanese, "Effective language is Japanese")
         TestHarness.assertEqual(loc.tr(.searchPlaceholder), "クリップを検索...", "Search placeholder translated to Japanese")
         TestHarness.assertEqual(loc.tr(.pinnedSection), "ピン留め", "Pinned section translated to Japanese")
         TestHarness.assertEqual(loc.tr(.languageLabel), "言語:", "Language label translated to Japanese")
+        TestHarness.assertEqual(loc.tr(.authorLabel), "開発者", "Author label translated to Japanese")
+        TestHarness.assertEqual(loc.tr(.licenseLabel), "ライセンス", "License label translated to Japanese")
 
         loc.setLanguage(.english)
         TestHarness.assertEqual(loc.effectiveLanguage, .english, "Effective language is English")
         TestHarness.assertEqual(loc.tr(.searchPlaceholder), "Search clips...", "Search placeholder translated to English")
         TestHarness.assertEqual(loc.tr(.pinnedSection), "PINNED", "Pinned section translated to English")
         TestHarness.assertEqual(loc.tr(.languageLabel), "Language:", "Language label translated to English")
+        TestHarness.assertEqual(loc.tr(.authorLabel), "Author", "Author label translated to English")
+        TestHarness.assertEqual(loc.tr(.licenseLabel), "License", "License label translated to English")
 
         // 3. Image tag localization
         TestHarness.assertEqual(L10nKey.imageTag(800, 600).localized(for: .vietnamese), "[Ảnh] 800x600", "Vietnamese image tag")

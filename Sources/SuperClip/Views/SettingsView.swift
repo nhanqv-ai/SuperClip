@@ -626,18 +626,74 @@ public struct SettingsView: View {
     // MARK: - About Tab Content
 
     private var aboutTabContent: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "doc.on.clipboard")
-                .font(.system(size: 40))
-                .foregroundColor(.accentColor)
-                .padding(.top, 8)
+        VStack(spacing: 12) {
+            if let appIcon = NSApp?.applicationIconImage, appIcon.isValid {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 56, height: 56)
+                    .padding(.top, 4)
+            } else {
+                Image(systemName: "doc.on.clipboard")
+                    .font(.system(size: 36))
+                    .foregroundColor(.accentColor)
+                    .padding(.top, 6)
+            }
 
-            Text(LocalizationManager.shared.tr(.appTitle))
-                .font(.system(size: 18, weight: .bold))
+            VStack(spacing: 2) {
+                Text(LocalizationManager.shared.tr(.appTitle))
+                    .font(.system(size: 16, weight: .bold))
 
-            Text(LocalizationManager.shared.tr(.versionLabel("1.0.0")))
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                Text(LocalizationManager.shared.tr(.versionLabel("1.0.0")))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+
+            Divider()
+
+            VStack(spacing: 8) {
+                HStack {
+                    Text(LocalizationManager.shared.tr(.authorLabel) + ":")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("Nhan Quach (@nhanqv-ai)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.primary)
+                }
+
+                HStack {
+                    Text(LocalizationManager.shared.tr(.licenseLabel) + ":")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("MIT License")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.primary)
+                }
+
+                HStack {
+                    Text("GitHub:")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Button(action: {
+                        if let url = URL(string: "https://github.com/nhanqv-ai/SuperClip") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("nhanqv-ai/SuperClip")
+                                .font(.system(size: 12, weight: .medium))
+                            Image(systemName: "arrow.up.forward.square")
+                                .font(.system(size: 10))
+                        }
+                        .foregroundColor(.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 14)
 
             Divider()
 
@@ -649,6 +705,7 @@ public struct SettingsView: View {
                     }
                 }
                 .buttonStyle(.bordered)
+                .controlSize(.small)
                 .confirmationDialog(
                     LocalizationManager.shared.tr(.resetConfirmTitle),
                     isPresented: $showingResetConfirmation,
@@ -662,7 +719,7 @@ public struct SettingsView: View {
                     Text(LocalizationManager.shared.tr(.resetConfirmMessage))
                 }
             }
-            .padding(.bottom, 8)
+            .padding(.bottom, 4)
         }
         .padding(14)
         .frame(maxWidth: .infinity)

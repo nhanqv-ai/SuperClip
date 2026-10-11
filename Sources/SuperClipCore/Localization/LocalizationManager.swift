@@ -155,6 +155,8 @@ public enum L10nKey: Sendable {
 
     // About Preferences & Dialogs
     case versionLabel(String)
+    case authorLabel
+    case licenseLabel
     case resetAllDefaults
     case resetConfirmTitle
     case resetConfirmMessage
@@ -780,6 +782,30 @@ public enum L10nKey: Sendable {
 
         case .versionLabel(let ver):
             return "Version \(ver)"
+
+        case .authorLabel:
+            switch lang {
+            case .vietnamese: return "Tác giả"
+            case .simplifiedChinese: return "作者"
+            case .japanese: return "開発者"
+            case .korean: return "개발자"
+            case .spanish: return "Autor"
+            case .french: return "Auteur"
+            case .german: return "Autor"
+            default: return "Author"
+            }
+
+        case .licenseLabel:
+            switch lang {
+            case .vietnamese: return "Giấy phép"
+            case .simplifiedChinese: return "许可证"
+            case .japanese: return "ライセンス"
+            case .korean: return "라이선스"
+            case .spanish: return "Licencia"
+            case .french: return "Licence"
+            case .german: return "Lizenz"
+            default: return "License"
+            }
 
         case .resetAllDefaults:
             switch lang {
