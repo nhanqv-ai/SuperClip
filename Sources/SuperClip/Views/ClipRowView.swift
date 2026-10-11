@@ -141,7 +141,7 @@ public struct ClipRowView: View {
         HStack(spacing: 6) {
             // Clickable row content body (left-aligned)
             Button(action: {
-                ThumbnailHoverPreviewPanel.shared.hide()
+                ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                 onSelect?(item)
             }) {
                 Text(rowContentText)
@@ -153,7 +153,6 @@ public struct ClipRowView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(textTooltip)
 
             // Right-aligned trailing controls (Pin, Delete on hover, and shortcut badge)
             trailingControls
@@ -170,21 +169,19 @@ public struct ClipRowView: View {
             withAnimation(.easeInOut(duration: 0.12)) {
                 isHovered = hovering
             }
-            if item.contentType == .image {
-                if hovering {
-                    ThumbnailHoverPreviewPanel.shared.show(for: item, thumbnailURL: thumbnailURL)
-                } else {
-                    ThumbnailHoverPreviewPanel.shared.hide()
-                }
+            if hovering {
+                ThumbnailHoverPreviewPanel.shared.show(for: item, thumbnailURL: thumbnailURL)
+            } else {
+                ThumbnailHoverPreviewPanel.shared.hide()
             }
         }
         .contextMenu {
             Button(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip)) {
-                ThumbnailHoverPreviewPanel.shared.hide()
+                ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                 onTogglePin?(item)
             }
             Button(LocalizationManager.shared.tr(.copyClip)) {
-                ThumbnailHoverPreviewPanel.shared.hide()
+                ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                 if let onCopy = onCopy {
                     onCopy(item)
                 } else {
@@ -193,7 +190,7 @@ public struct ClipRowView: View {
             }
             Divider()
             Button(LocalizationManager.shared.tr(.deleteClip)) {
-                ThumbnailHoverPreviewPanel.shared.hide()
+                ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                 onDelete?(item)
             }
         }
@@ -257,7 +254,7 @@ public struct ClipRowView: View {
             if isHovered {
                 // Compact Delete Button (on the left)
                 Button(action: {
-                    ThumbnailHoverPreviewPanel.shared.hide()
+                    ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                     onDelete?(item)
                 }) {
                     Image(systemName: "trash")
@@ -275,7 +272,7 @@ public struct ClipRowView: View {
 
                 // Compact Pin / Unpin Button (on the right - maintains position with static pin)
                 Button(action: {
-                    ThumbnailHoverPreviewPanel.shared.hide()
+                    ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                     onTogglePin?(item)
                 }) {
                     Image(systemName: item.isPinned ? "pin.fill" : "pin")
@@ -298,7 +295,7 @@ public struct ClipRowView: View {
                         .frame(width: 18, height: 18)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            ThumbnailHoverPreviewPanel.shared.hide()
+                            ThumbnailHoverPreviewPanel.shared.hide(immediate: true)
                             onTogglePin?(item)
                         }
                 }

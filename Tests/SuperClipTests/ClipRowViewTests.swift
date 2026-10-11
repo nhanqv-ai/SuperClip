@@ -160,9 +160,12 @@ public struct ClipRowViewTests {
         TestHarness.assertEqual(previewPanel.currentItemId, imageWithDims.id, "display sets currentItemId for image clip")
 
         previewPanel.show(for: shortTextItem, thumbnailURL: nil)
-        TestHarness.assertNil(previewPanel.currentItemId, "show with text item resets currentItemId")
+        TestHarness.assertNil(previewPanel.currentItemId, "show with short text item resets currentItemId")
 
-        previewPanel.hide()
+        previewPanel.displayText(item: longTextItem, text: "Long text tooltip preview")
+        TestHarness.assertEqual(previewPanel.currentItemId, longTextItem.id, "displayText sets currentItemId for long text item")
+
+        previewPanel.hide(immediate: true)
         TestHarness.assertNil(previewPanel.currentItemId, "hide clears currentItemId")
     }
 }
