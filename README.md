@@ -53,6 +53,13 @@
 2. Unzip and drag `SuperClip.app` into your `/Applications` folder.
 3. Open `SuperClip.app`. An icon will appear on your macOS menu bar.
 
+> [!NOTE]
+> **First-Time Launch (macOS Gatekeeper)**:
+> Since SuperClip is an independent open-source project without Apple Developer ID notarization, macOS may show a verification dialog (*"SuperClip" Not Opened*). You can allow it via any of these methods:
+> - **Terminal (Recommended)**: Run `xattr -cr /Applications/SuperClip.app` (or on the unzipped path).
+> - **System Settings**: Go to **System Settings** -> **Privacy & Security** -> click **Open Anyway**.
+> - **Finder**: Right-click `SuperClip.app` -> choose **Open** -> click **Open**.
+
 #### Build from Source
 ```bash
 git clone https://github.com/nhanqv-ai/SuperClip.git
@@ -131,6 +138,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 1. Tải bản phát hành mới nhất `SuperClip-v1.0.0.zip` tại mục [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
 2. Giải nén và kéo file `SuperClip.app` vào thư mục `/Applications` (Ứng dụng).
 3. Mở `SuperClip.app`. Biểu tượng ứng dụng sẽ xuất hiện trên thanh menu macOS.
+
+> [!NOTE]
+> **Mở ứng dụng lần đầu (macOS Gatekeeper)**:
+> Do SuperClip là phần mềm mã nguồn mở độc lập (chưa đăng ký chứng chỉ Apple Developer có phí), macOS có thể hiển thị thông báo bảo vệ (*"SuperClip" Not Opened*). Bạn có thể mở ứng dụng dễ dàng bằng một trong các cách:
+> - **Dùng Terminal (Nhanh nhất)**: Chạy lệnh `xattr -cr /Applications/SuperClip.app` (hoặc đường dẫn file vừa giải nén).
+> - **Dùng Cài đặt hệ thống**: Vào **System Settings** -> **Privacy & Security** -> cuộn xuống mục **Security** -> chọn **Open Anyway** (Vẫn mở).
+> - **Dùng chuột phải**: Nhấp chuột phải (hoặc giữ phím `Control` + click) vào `SuperClip.app` -> chọn **Open** (Mở) -> chọn **Open**.
 
 #### Biên dịch từ mã nguồn
 ```bash
