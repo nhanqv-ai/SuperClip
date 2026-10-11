@@ -11,6 +11,15 @@ public protocol StorageManaging: AnyObject, ObservableObject {
     func getThumbnailURL(for item: ClipItem) -> URL?
     func getImageData(for item: ClipItem) -> Data?
     func flushDiskQueue()
+    func addIgnoredApp(_ app: IgnoredApp)
+    func removeIgnoredApp(bundleIdentifier: String)
+    func isAppIgnored(bundleIdentifier: String?, name: String?) -> Bool
+}
+
+extension StorageManaging {
+    public func addIgnoredApp(_ app: IgnoredApp) {}
+    public func removeIgnoredApp(bundleIdentifier: String) {}
+    public func isAppIgnored(bundleIdentifier: String?, name: String? = nil) -> Bool { false }
 }
 
 public final class StorageManager: ObservableObject, StorageManaging {
@@ -298,6 +307,85 @@ public final class StorageManager: ObservableObject, StorageManaging {
 
     public func flushDiskQueue() {
         fileQueue.sync {}
+    }
+
+    public func addIgnoredApp(_ app: IgnoredApp) {
+        lock.lock()
+        let trimmedBid = app.bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedName = app.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedBid.isEmpty || !trimmedName.isEmpty else {
+            lock.unlock()
+            return
+        }
+        var current = _settings.ignoredApps
+        let normalizedApp = IgnoredApp(
+            bundleIdentifier: trimmedBid.isEmpty ? trimmedName : trimmedBid,
+            name: trimmedName.isEmpty ? trimmedBid : trimmedName,
+            iconPath: app.iconPath
+        )
+        let isDuplicate = current.contains { existing in
+            // When both have distinct non-empty bundle identifiers, compare bundle identifiers
+            if !normalizedApp.bundleIdentifier.isEmpty && !existing.bundleIdentifier.isEmpty {
+                if existing.bundleIdentifier.caseInsensitiveCompare(normalizedApp.bundleIdentifier) == .orderedSame {
+                    return true
+                }
+            }
+            // If either app lacks a distinct bundle identifier (i.e. bundleId equals name), fall back to name matching
+            let normIsNameOnly = normalizedApp.bundleIdentifier.isEmpty || normalizedApp.bundleIdentifier.caseInsensitiveCompare(normalizedApp.name) == .orderedSame
+            let existIsNameOnly = existing.bundleIdentifier.isEmpty || existing.bundleIdentifier.caseInsensitiveCompare(existing.name) == .orderedSame
+            if normIsNameOnly || existIsNameOnly {
+                if !normalizedApp.name.isEmpty && !existing.name.isEmpty &&
+                   existing.name.caseInsensitiveCompare(normalizedApp.name) == .orderedSame {
+                    return true
+                }
+            }
+            return false
+        }
+        if !isDuplicate {
+            current.append(normalizedApp)
+            _settings.ignoredApps = current
+            saveSettings()
+            lock.unlock()
+            notifyChange()
+        } else {
+            lock.unlock()
+        }
+    }
+
+    public func removeIgnoredApp(bundleIdentifier: String) {
+        lock.lock()
+        let target = bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !target.isEmpty else {
+            lock.unlock()
+            return
+        }
+        var current = _settings.ignoredApps
+        current.removeAll {
+            $0.bundleIdentifier.caseInsensitiveCompare(target) == .orderedSame ||
+            $0.id.caseInsensitiveCompare(target) == .orderedSame ||
+            ($0.bundleIdentifier.caseInsensitiveCompare($0.name) == .orderedSame && $0.name.caseInsensitiveCompare(target) == .orderedSame)
+        }
+        _settings.ignoredApps = current
+        saveSettings()
+        lock.unlock()
+        notifyChange()
+    }
+
+    public func isAppIgnored(bundleIdentifier: String?, name: String? = nil) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        let cleanBid = bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let apps = _settings.ignoredApps
+        return apps.contains { app in
+            if let bid = cleanBid, !bid.isEmpty, app.bundleIdentifier.caseInsensitiveCompare(bid) == .orderedSame {
+                return true
+            }
+            if let n = cleanName, !n.isEmpty, app.name.caseInsensitiveCompare(n) == .orderedSame {
+                return true
+            }
+            return false
+        }
     }
 
     private func saveMetadata() {

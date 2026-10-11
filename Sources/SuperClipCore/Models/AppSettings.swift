@@ -10,6 +10,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var recordClipboardHistory: Bool
     public var displayCapacity: Int
     public var language: String
+    public var ignoredApps: [IgnoredApp]
 
     public static let defaultCapacity: Int = 100
     public static let defaultHotKeyKeyCode: UInt32 = 9 // kVK_ANSI_V
@@ -20,6 +21,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public static let defaultRecordClipboardHistory: Bool = true
     public static let defaultDisplayCapacity: Int = 20
     public static let defaultLanguage: String = "system"
+    public static let defaultIgnoredApps: [IgnoredApp] = []
 
     public var historyCapacity: Int {
         get { capacity }
@@ -45,7 +47,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         launchAtLogin: Bool = false,
         recordClipboardHistory: Bool = true,
         displayCapacity: Int = 20,
-        language: String = AppSettings.defaultLanguage
+        language: String = AppSettings.defaultLanguage,
+        ignoredApps: [IgnoredApp] = []
     ) {
         self.capacity = max(10, min(capacity, 1000))
         self.hotKeyKeyCode = hotKeyKeyCode
@@ -56,6 +59,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.recordClipboardHistory = recordClipboardHistory
         self.displayCapacity = max(5, min(displayCapacity, 500))
         self.language = language
+        self.ignoredApps = ignoredApps
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -68,6 +72,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case recordClipboardHistory
         case displayCapacity
         case language
+        case ignoredApps
     }
 
     public init(from decoder: Decoder) throws {
@@ -85,6 +90,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         let disp = try container.decodeIfPresent(Int.self, forKey: .displayCapacity) ?? 20
         self.displayCapacity = max(5, min(disp, 500))
         self.language = try container.decodeIfPresent(String.self, forKey: .language) ?? AppSettings.defaultLanguage
+        self.ignoredApps = try container.decodeIfPresent([IgnoredApp].self, forKey: .ignoredApps) ?? []
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -98,5 +104,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try container.encode(recordClipboardHistory, forKey: .recordClipboardHistory)
         try container.encode(displayCapacity, forKey: .displayCapacity)
         try container.encode(language, forKey: .language)
+        try container.encode(ignoredApps, forKey: .ignoredApps)
     }
 }

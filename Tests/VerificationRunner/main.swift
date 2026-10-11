@@ -86,6 +86,9 @@ struct VerificationRunner {
         // 20. Localization & Dynamic Multilingual Tests
         LocalizationTests.run(sandboxDir: sandboxURL.appendingPathComponent("LocalizationTest"))
 
+        // 21. Ignored Apps & Launch at Login Tests
+        IgnoredAppsTests.run(sandboxDir: sandboxURL.appendingPathComponent("IgnoredAppsTest"))
+
         let elapsed = Date().timeIntervalSince(startTimestamp)
         print("\nVerification completed in \(String(format: "%.3f", elapsed)) seconds.")
         

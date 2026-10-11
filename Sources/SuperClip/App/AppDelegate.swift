@@ -16,9 +16,32 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         storageManager = StorageManager()
         pasteboardMonitor = PasteboardMonitor.shared
 
+        // Synchronize launch at login with system
+        LaunchAtLoginManager.shared.setEnabled(storageManager.settings.launchAtLogin)
+
+        // Configure ignored apps provider and check for pasteboard monitor
+        pasteboardMonitor.ignoredAppsProvider = { [weak self] in
+            self?.storageManager.settings.ignoredApps ?? []
+        }
+        pasteboardMonitor.isIgnoredAppCheck = { [weak self] bundleId, name in
+            self?.storageManager.isAppIgnored(bundleIdentifier: bundleId, name: name) ?? false
+        }
+
         // Register pasteboard polling callback
         pasteboardMonitor.onNewClip = { [weak self] item, rawData, thumbData in
             guard let self = self, self.storageManager.settings.recordClipboardHistory else { return }
+
+            // Active filtering check for frontmost application
+            let (rawBid, rawName) = self.pasteboardMonitor.frontmostAppProvider?() ?? (
+                NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+                NSWorkspace.shared.frontmostApplication?.localizedName
+            )
+            let bundleId = rawBid?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let appName = rawName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if self.storageManager.isAppIgnored(bundleIdentifier: bundleId, name: appName) {
+                return
+            }
+
             self.storageManager.addClip(item: item, imageData: rawData, thumbData: thumbData)
         }
         pasteboardMonitor.startPolling(intervalMs: storageManager.settings.pollIntervalMs)

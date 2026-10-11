@@ -31,6 +31,41 @@ public final class PasteboardMonitor: PasteboardMonitoring, @unchecked Sendable 
 
     private var lastExtractedImageHash: Int?
 
+    public var frontmostAppProvider: (() -> (bundleIdentifier: String?, name: String?))? = {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return (nil, nil) }
+        return (app.bundleIdentifier, app.localizedName)
+    }
+
+    public var isIgnoredAppCheck: ((_ bundleIdentifier: String?, _ name: String?) -> Bool)?
+    public var ignoredAppsProvider: (() -> [IgnoredApp])?
+
+    public func isFrontmostAppIgnored() -> Bool {
+        let (rawBid, rawName) = frontmostAppProvider?() ?? (
+            NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+            NSWorkspace.shared.frontmostApplication?.localizedName
+        )
+        let bundleId = rawBid?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = rawName?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let check = isIgnoredAppCheck {
+            return check(bundleId, name)
+        }
+
+        if let provider = ignoredAppsProvider {
+            let apps = provider()
+            return apps.contains { app in
+                if let bid = bundleId, !bid.isEmpty, app.bundleIdentifier.caseInsensitiveCompare(bid) == .orderedSame {
+                    return true
+                }
+                if let appName = name, !appName.isEmpty, app.name.caseInsensitiveCompare(appName) == .orderedSame {
+                    return true
+                }
+                return false
+            }
+        }
+        return false
+    }
+
     public var onNewClip: ((ClipItem, Data?, Data?) -> Void)?
 
     public init(pasteboard: NSPasteboard = .general) {
@@ -93,6 +128,9 @@ public final class PasteboardMonitor: PasteboardMonitoring, @unchecked Sendable 
 
         if current != lastChangeCount {
             lastChangeCount = current
+            if isFrontmostAppIgnored() {
+                return false
+            }
             return true
         }
 
@@ -121,7 +159,11 @@ public final class PasteboardMonitor: PasteboardMonitoring, @unchecked Sendable 
                     shouldProcess = false
                 } else {
                     lastChangeCount = currentCount
-                    shouldProcess = true
+                    if isFrontmostAppIgnored() {
+                        shouldProcess = false
+                    } else {
+                        shouldProcess = true
+                    }
                 }
             }
             stateLock.unlock()

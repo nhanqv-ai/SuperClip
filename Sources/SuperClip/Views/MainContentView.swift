@@ -301,6 +301,26 @@ public struct MainContentView: View {
                 return nil
             }
 
+            // Section-Aware Shortcuts (Option for pinned, Command for recent)
+            if let sectionShortcut = ShortcutNavigator.parseSectionShortcut(from: event, searchFieldHasFocus: selectedIndex == nil) {
+                if let target = ShortcutNavigator.targetItem(
+                    forSectionShortcut: sectionShortcut,
+                    pinnedItems: partitionedClips.pinned,
+                    recentItems: partitionedClips.recent
+                ) {
+                    selectItem(target)
+                    return nil
+                }
+            }
+
+            // Command + 1..9 or bare 1..9 (if list focused)
+            if let shortcutDigit = ShortcutNavigator.parseShortcut(from: event, searchFieldHasFocus: selectedIndex == nil) {
+                if let target = ShortcutNavigator.targetItem(forShortcut: shortcutDigit, in: visibleItems) {
+                    selectItem(target)
+                    return nil
+                }
+            }
+
             return event
         }
     }

@@ -69,6 +69,7 @@ public struct ClipRowViewTests {
         let savedLang = LocalizationManager.shared.currentLanguage
         LocalizationManager.shared.setLanguage(.vietnamese)
         TestHarness.assertEqual(ClipRowView.formatContentText(for: whitespaceText), "(Khoảng trắng)", "Whitespace-only text displays as (Khoảng trắng) in Vietnamese")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: emptyText), "(Empty)", "Empty text displays as (Empty)")
         let imageWithDims = ClipItem(id: UUID(), contentType: .image, imageWidth: 1920, imageHeight: 1080)
         TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithDims), "[Ảnh] 1920x1080", "Image with dimensions displays [Ảnh] <width>x<height>")
 

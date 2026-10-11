@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Carbon
+import UniformTypeIdentifiers
 import SuperClipCore
 
 /// AppSettings convenience extension for specification naming compatibility.
@@ -111,6 +112,7 @@ public struct SettingsView: View {
     @ObservedObject public var storageManager: StorageManager
     @ObservedObject private var localizationManager = LocalizationManager.shared
     public var hotKeyManager: HotKeyManaging
+    public var launchAtLoginManager: any LaunchAtLoginManaging
     public var onDismiss: (() -> Void)?
 
     @State private var selectedTab: SettingsTab = .general
@@ -119,6 +121,27 @@ public struct SettingsView: View {
     @State private var showingClearConfirmation: Bool = false
     @State private var showingResetConfirmation: Bool = false
     @State private var hotKeyWarningMessage: String? = nil
+
+    private final class SelectionBox: @unchecked Sendable {
+        var id: String? = nil
+        var isSet: Bool = false
+    }
+    private let selectionBox = SelectionBox()
+    @State private var internalSelectedIgnoredAppId: String? = nil
+
+    public var selectedIgnoredAppId: String? {
+        get {
+            if selectionBox.isSet {
+                return selectionBox.id
+            }
+            return internalSelectedIgnoredAppId
+        }
+        nonmutating set {
+            selectionBox.id = newValue
+            selectionBox.isSet = true
+            internalSelectedIgnoredAppId = newValue
+        }
+    }
 
     public enum SettingsTab: String, CaseIterable, Identifiable {
         case general = "General"
@@ -150,11 +173,13 @@ public struct SettingsView: View {
     public init(
         storageManager: StorageManager,
         hotKeyManager: HotKeyManaging = HotKeyManager.shared,
+        launchAtLoginManager: any LaunchAtLoginManaging = LaunchAtLoginManager.shared,
         onClose: (() -> Void)? = nil,
         onDismiss: (() -> Void)? = nil
     ) {
         self.storageManager = storageManager
         self.hotKeyManager = hotKeyManager
+        self.launchAtLoginManager = launchAtLoginManager
         self.onDismiss = onClose ?? onDismiss
     }
 
@@ -334,6 +359,7 @@ public struct SettingsView: View {
                         var s = storageManager.settings
                         s.launchAtLogin = newVal
                         storageManager.settings = s
+                        launchAtLoginManager.setEnabled(newVal)
                     }
                 ))
                 .toggleStyle(.checkbox)
@@ -496,26 +522,14 @@ public struct SettingsView: View {
                 .foregroundColor(.secondary)
 
             VStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color(nsColor: .textBackgroundColor))
-                    .frame(height: 120)
-                    .overlay(
-                        VStack(spacing: 6) {
-                            Image(systemName: "eye.slash")
-                                .font(.system(size: 24))
-                                .foregroundColor(.secondary)
-                            Text(LocalizationManager.shared.tr(.noIgnoredApps))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.secondary)
-                        }
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color(nsColor: .separatorColor), lineWidth: 0.8)
-                    )
+                if storageManager.settings.ignoredApps.isEmpty {
+                    emptyIgnoredAppsView
+                } else {
+                    ignoredAppsListView
+                }
 
-                HStack {
-                    Button(action: {}) {
+                HStack(spacing: 8) {
+                    Button(action: { openAppSelectionPanel() }) {
                         Image(systemName: "plus")
                             .frame(width: 18, height: 18)
                     }
@@ -523,13 +537,13 @@ public struct SettingsView: View {
                     .controlSize(.small)
                     .help(LocalizationManager.shared.tr(.addAppButton))
 
-                    Button(action: {}) {
+                    Button(action: { removeSelectedIgnoredApp() }) {
                         Image(systemName: "minus")
                             .frame(width: 18, height: 18)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(true)
+                    .disabled(selectedIgnoredAppId == nil || !storageManager.settings.ignoredApps.contains(where: { $0.id == selectedIgnoredAppId }))
                     .help(LocalizationManager.shared.tr(.removeButton))
 
                     Spacer()
@@ -546,6 +560,161 @@ public struct SettingsView: View {
                         .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
                 )
         )
+    }
+
+    private var emptyIgnoredAppsView: some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(Color(nsColor: .textBackgroundColor))
+            .frame(height: 140)
+            .overlay(
+                VStack(spacing: 6) {
+                    Image(systemName: "eye.slash")
+                        .font(.system(size: 24))
+                        .foregroundColor(.secondary)
+                    Text(LocalizationManager.shared.tr(.noIgnoredApps))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(Color(nsColor: .separatorColor), lineWidth: 0.8)
+            )
+    }
+
+    private var ignoredAppsListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 2) {
+                ForEach(storageManager.settings.ignoredApps) { app in
+                    ignoredAppRow(app)
+                }
+            }
+            .padding(4)
+        }
+        .frame(height: 140)
+        .background(Color(nsColor: .textBackgroundColor))
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.8)
+        )
+    }
+
+    private func ignoredAppRow(_ app: IgnoredApp) -> some View {
+        let isSelected = selectedIgnoredAppId == app.id
+        return HStack(spacing: 8) {
+            appIconImage(for: app)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 20)
+
+            Text(app.name)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+
+            Spacer()
+
+            Text(app.bundleIdentifier)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectedIgnoredAppId = app.id
+        }
+    }
+
+    private func appIconImage(for app: IgnoredApp) -> Image {
+        if let path = app.iconPath, FileManager.default.fileExists(atPath: path) {
+            let icon = NSWorkspace.shared.icon(forFile: path)
+            return Image(nsImage: icon)
+        }
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.bundleIdentifier) {
+            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            return Image(nsImage: icon)
+        }
+        let icon = NSWorkspace.shared.icon(for: .application)
+        return Image(nsImage: icon)
+    }
+
+    public func openAppSelectionPanel() {
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSOpenPanel()
+        panel.title = LocalizationManager.shared.tr(.addAppButton)
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        if #available(macOS 11.0, *) {
+            panel.allowedContentTypes = [.applicationBundle, .application]
+        } else {
+            panel.allowedFileTypes = ["app"]
+        }
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.treatsFilePackagesAsDirectories = false
+
+        if panel.runModal() == .OK {
+            for url in panel.urls {
+                addIgnoredApp(from: url)
+            }
+        }
+    }
+
+    public func addIgnoredApp(from url: URL) {
+        let name: String
+        let bundleId: String
+
+        if let bundle = Bundle(url: url) {
+            let localizedDisplayName = (bundle.localizedInfoDictionary?["CFBundleDisplayName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let displayName = (bundle.infoDictionary?["CFBundleDisplayName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let bundleName = (bundle.infoDictionary?["CFBundleName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let finderName = FileManager.default.displayName(atPath: url.path).trimmingCharacters(in: .whitespacesAndNewlines)
+            let fallbackName = url.deletingPathExtension().lastPathComponent
+            let candidateName: String
+            if let ld = localizedDisplayName, !ld.isEmpty {
+                candidateName = ld
+            } else if let d = displayName, !d.isEmpty {
+                candidateName = d
+            } else if let b = bundleName, !b.isEmpty {
+                candidateName = b
+            } else if !finderName.isEmpty {
+                candidateName = finderName
+            } else {
+                candidateName = fallbackName
+            }
+            name = candidateName
+
+            if let bid = bundle.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines), !bid.isEmpty {
+                bundleId = bid
+            } else {
+                bundleId = candidateName
+            }
+        } else {
+            let finderName = FileManager.default.displayName(atPath: url.path).trimmingCharacters(in: .whitespacesAndNewlines)
+            let fallbackName = url.deletingPathExtension().lastPathComponent
+            name = !finderName.isEmpty ? finderName : fallbackName
+            bundleId = name
+        }
+
+        let newApp = IgnoredApp(bundleIdentifier: bundleId, name: name, iconPath: url.path)
+        storageManager.addIgnoredApp(newApp)
+    }
+
+    public func removeSelectedIgnoredApp() {
+        guard let id = selectedIgnoredAppId else { return }
+        storageManager.removeIgnoredApp(bundleIdentifier: id)
+        selectedIgnoredAppId = nil
+    }
+
+    public func selectIgnoredApp(id: String?) {
+        selectedIgnoredAppId = id
     }
 
     // MARK: - Clips Management Tab Content
@@ -833,6 +1002,8 @@ public struct SettingsView: View {
         let def = AppSettings()
         storageManager.capacity = AppSettings.defaultCapacity
         storageManager.settings = def
+        launchAtLoginManager.setEnabled(false)
+        selectedIgnoredAppId = nil
         LocalizationManager.shared.setLanguage(code: def.language)
         hotKeyManager.register(
             keyCode: AppSettings.defaultHotKeyKeyCode,

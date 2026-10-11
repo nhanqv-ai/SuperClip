@@ -248,14 +248,26 @@ public struct ClipRowView: View {
                 }
                 .buttonStyle(.plain)
                 .help(LocalizationManager.shared.tr(.deleteClip))
-            } else if item.isPinned {
-                Image(systemName: "pin.fill")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.accentColor)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        onSelect?(item)
-                    }
+            } else {
+                if item.isPinned {
+                    Image(systemName: "pin.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.accentColor)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            onSelect?(item)
+                        }
+                }
+                if let idx = shortcutIndex {
+                    Text("\(idx)")
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.secondary.opacity(0.8))
+                        .frame(width: 14, height: 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Color.secondary.opacity(0.12))
+                        )
+                }
             }
         }
     }

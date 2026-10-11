@@ -75,6 +75,7 @@ SWIFT_FILES=(
     "$PROJECT_ROOT/Tests/SuperClipTests/SettingsViewTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/AppSettingsTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/LocalizationTests.swift"
+    "$PROJECT_ROOT/Tests/SuperClipTests/IgnoredAppsTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/BoundaryTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/PairwiseTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/WorkloadTests.swift"
