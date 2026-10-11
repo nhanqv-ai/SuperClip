@@ -53,12 +53,30 @@ public struct SearchFilterTests {
         let multiTokenResult = SearchEngine.filter(items: items, query: "carbon registration")
         TestHarness.assertEqual(multiTokenResult.count, 1, "Multi-token query matches item containing both words")
         TestHarness.assertEqual(multiTokenResult.first?.id, c3.id, "Multi-token query matches c3")
+
+        // Test 7: Empty and Whitespace Text Search matching and zero-dimension images
+        let cEmpty = ClipItem(id: UUID(), contentType: .text, textContent: "")
+        let cWhitespace = ClipItem(id: UUID(), contentType: .text, textContent: "   \t\n  ")
+        let cZeroImg = ClipItem(id: UUID(), contentType: .image, imageWidth: 0, imageHeight: 0)
+        let specialItems = [cEmpty, cWhitespace, cZeroImg]
+
+        let emptyQuery = SearchEngine.filter(items: specialItems, query: "empty")
+        TestHarness.assertEqual(emptyQuery.count, 1, "Query 'empty' matches empty text item")
+        TestHarness.assertEqual(emptyQuery.first?.id, cEmpty.id, "Query 'empty' matches cEmpty")
+
+        let whitespaceQuery = SearchEngine.filter(items: specialItems, query: "whitespace")
+        TestHarness.assertEqual(whitespaceQuery.count, 1, "Query 'whitespace' matches whitespace text item")
+        TestHarness.assertEqual(whitespaceQuery.first?.id, cWhitespace.id, "Query 'whitespace' matches cWhitespace")
+
+        let zeroImgQuery = SearchEngine.filter(items: specialItems, query: "[Ảnh]")
+        TestHarness.assertEqual(zeroImgQuery.count, 1, "Query '[Ảnh]' matches image item with zero dimensions")
+        TestHarness.assertEqual(zeroImgQuery.first?.id, cZeroImg.id, "Query '[Ảnh]' matches cZeroImg")
         
-        // Test 7: Non-matching query returns empty list
+        // Test 8: Non-matching query returns empty list
         let noneResult = SearchEngine.filter(items: items, query: "nonexistent_token_xyz")
         TestHarness.assertEqual(noneResult.count, 0, "Non-matching query returns empty array")
         
-        // Test 8: Partitioning into Pinned and Unpinned sections
+        // Test 9: Partitioning into Pinned and Unpinned sections
         let partitioned = SearchEngine.partition(items: items)
         TestHarness.assertEqual(partitioned.pinned.count, 2, "Partitioning correctly segregates 2 pinned items")
         TestHarness.assertEqual(partitioned.unpinned.count, 3, "Partitioning correctly segregates 3 unpinned items")

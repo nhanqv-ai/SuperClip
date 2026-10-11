@@ -157,6 +157,20 @@ public struct StatusItemManagerTests {
             "Status button tooltip reflects custom registered shortcut"
         )
 
+        // Test 12: Dynamic runtime update of status button tooltip on settings mutation
+        var dynamicSettings = customStorage.settings
+        dynamicSettings.hotKeyKeyCode = 9 // V
+        dynamicSettings.hotKeyModifiers = UInt32(cmdKey | shiftKey) // Cmd + Shift
+        customStorage.settings = dynamicSettings
+
+        RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+
+        TestHarness.assertEqual(
+            customManager.statusItem.button?.toolTip,
+            "SuperClip - Clipboard History (Shift + Command + V)",
+            "Status button tooltip dynamically reflects live settings mutation"
+        )
+
         hostWindow.orderOut(nil)
     }
 }

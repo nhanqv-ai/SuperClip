@@ -747,6 +747,7 @@ public struct SettingsView: View {
     }
 
     private func resetToDefaults() {
+        hotKeyWarningMessage = nil
         let def = AppSettings()
         storageManager.capacity = AppSettings.defaultCapacity
         storageManager.settings = def

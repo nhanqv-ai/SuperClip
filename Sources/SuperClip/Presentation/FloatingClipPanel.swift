@@ -69,7 +69,7 @@ public final class FloatingClipPanel: NSPanel, FloatingPanelPresenting {
 
     /// Convenience initializer hosting a SwiftUI root view immediately.
     /// - Parameters:
-    ///   - size: Panel dimensions (defaults to 360x480).
+    ///   - size: Panel dimensions (defaults to 380x600).
     ///   - rootView: The SwiftUI view to host.
     public convenience init<V: View>(size: NSSize = defaultPanelSize, rootView: V) {
         self.init(contentRect: NSRect(origin: .zero, size: size))

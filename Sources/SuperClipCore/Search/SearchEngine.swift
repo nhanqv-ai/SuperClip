@@ -8,9 +8,14 @@ public enum SearchEngine {
         let targetText: String
         switch item.contentType {
         case .text:
-            targetText = item.textContent ?? ""
+            let content = item.textContent ?? ""
+            if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                targetText = "\(content) \(item.displayTitle)"
+            } else {
+                targetText = content
+            }
         case .image:
-            let dims = (item.imageWidth != nil && item.imageHeight != nil) ? "\(item.imageWidth!)x\(item.imageHeight!)" : ""
+            let dims = (item.imageWidth != nil && item.imageHeight != nil && item.imageWidth! > 0 && item.imageHeight! > 0) ? "\(item.imageWidth!)x\(item.imageHeight!)" : ""
             targetText = "[Ảnh] \(dims) \(item.displayTitle)"
         }
 

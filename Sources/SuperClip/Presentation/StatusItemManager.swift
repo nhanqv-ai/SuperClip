@@ -1,5 +1,6 @@
 import AppKit
 import Carbon
+import Combine
 import SuperClipCore
 
 /// Protocol defining the floating panel interface required for dual-presentation coordination.
@@ -25,7 +26,11 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
     public weak var settingsWindowController: SettingsWindowController?
 
     /// Optional reference to the storage manager for maintenance actions
-    public weak var storageManager: (any StorageManaging)?
+    public weak var storageManager: (any StorageManaging)? {
+        didSet {
+            bindStorageManager()
+        }
+    }
 
     /// Action callbacks for testing and custom event interception
     public var onOpenSettingsRequested: (() -> Void)?
@@ -33,6 +38,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
     public var onDismissRequested: (() -> Void)?
     public var onPopoverVisibilityChanged: ((Bool) -> Void)?
 
+    private var settingsObserver: AnyCancellable?
     private var escapeMonitor: Any?
     private var lastPopoverCloseTimestamp: TimeInterval = 0
 
@@ -111,6 +117,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         let initialCode = (storageManager as? StorageManager)?.settings.hotKeyKeyCode ?? UInt32(kVK_ANSI_V)
         let initialMods = (storageManager as? StorageManager)?.settings.hotKeyModifiers ?? UInt32(optionKey)
         setupHotKey(keyCode: initialCode, modifiers: initialMods)
+        bindStorageManager()
     }
 
     // MARK: - Status Item Setup
@@ -175,6 +182,19 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         } else {
             let shortcut = KeyCombinationHelper.formattedShortcut(keyCode: keyCode, modifiers: modifiers)
             button.toolTip = "SuperClip - Clipboard History (\(shortcut))"
+        }
+    }
+
+    private func bindStorageManager() {
+        settingsObserver?.cancel()
+        settingsObserver = nil
+        guard let sm = storageManager as? StorageManager else { return }
+        updateToolTip(keyCode: sm.settings.hotKeyKeyCode, modifiers: sm.settings.hotKeyModifiers)
+        settingsObserver = sm.objectWillChange.sink { [weak self, weak sm] _ in
+            guard let self = self, let sm = sm else { return }
+            DispatchQueue.main.async {
+                self.updateToolTip(keyCode: sm.settings.hotKeyKeyCode, modifiers: sm.settings.hotKeyModifiers)
+            }
         }
     }
 
@@ -441,6 +461,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
     // MARK: - Lifecycle Teardown
 
     deinit {
+        settingsObserver?.cancel()
         removeEscapeMonitor()
         hotKeyManager.unregister()
         NSStatusBar.system.removeStatusItem(statusItem)
