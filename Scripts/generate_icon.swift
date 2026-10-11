@@ -43,6 +43,13 @@ struct IconGenerator {
             let fileURL = tempDir.appendingPathComponent(spec.name)
             try pngData.write(to: fileURL)
             print("  Created \(spec.name) (\(spec.pixelSize)x\(spec.pixelSize)px)")
+
+            if spec.name == "icon_512x512.png" {
+                let assetsURL = URL(fileURLWithPath: "Assets/AppIcon.png")
+                try? FileManager.default.createDirectory(at: assetsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? pngData.write(to: assetsURL)
+                print("  Exported standalone asset: \(assetsURL.path)")
+            }
         }
 
         let outputParent = outputURL.deletingLastPathComponent()
@@ -265,30 +272,71 @@ struct IconGenerator {
         )
         paperGradient?.draw(in: sheetPath, angle: -90.0)
 
-        // D. Document Lines (Vibrant Content Simulation)
+        // D. Document Content: Modern Header, Central Lightning Bolt & Framing Accent
         let lineW = sheetRect.width * 0.72
-        let lineH = max(1.5, CGFloat(pixelSize) * 0.018)
-        let lineSpacing = sheetRect.height * 0.125
+        let lineH = max(2.0, CGFloat(pixelSize) * 0.016)
         let lineStartX = sheetRect.midX - lineW / 2.0
-        let firstLineY = sheetRect.midY + sheetRect.height * 0.12
 
-        // Line 1: Cyan / Blue Accent
-        let line1Rect = NSRect(x: lineStartX, y: firstLineY, width: lineW * 0.85, height: lineH)
-        let line1Path = NSBezierPath(roundedRect: line1Rect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
-        NSColor(calibratedRed: 0.0, green: 0.65, blue: 0.95, alpha: 0.90).setFill()
-        line1Path.fill()
+        // Top accent line (Vibrant Cyan)
+        let topLineRect = NSRect(x: lineStartX, y: sheetRect.midY + sheetRect.height * 0.28, width: lineW * 0.75, height: lineH)
+        let topPath = NSBezierPath(roundedRect: topLineRect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
+        NSColor(calibratedRed: 0.0, green: 0.68, blue: 0.98, alpha: 0.85).setFill()
+        topPath.fill()
 
-        // Line 2: Violet Accent
-        let line2Rect = NSRect(x: lineStartX, y: firstLineY - lineSpacing, width: lineW, height: lineH)
-        let line2Path = NSBezierPath(roundedRect: line2Rect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
-        NSColor(calibratedRed: 0.45, green: 0.30, blue: 0.85, alpha: 0.80).setFill()
-        line2Path.fill()
+        // Bottom accent line (Soft Violet / Lavender)
+        let bottomLineRect = NSRect(x: lineStartX, y: sheetRect.midY - sheetRect.height * 0.32, width: lineW * 0.55, height: lineH)
+        let bottomPath = NSBezierPath(roundedRect: bottomLineRect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
+        NSColor(calibratedRed: 0.62, green: 0.65, blue: 0.82, alpha: 0.75).setFill()
+        bottomPath.fill()
 
-        // Line 3: Lavender / Neutral
-        let line3Rect = NSRect(x: lineStartX, y: firstLineY - lineSpacing * 2.0, width: lineW * 0.60, height: lineH)
-        let line3Path = NSBezierPath(roundedRect: line3Rect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
-        NSColor(calibratedRed: 0.65, green: 0.68, blue: 0.80, alpha: 0.70).setFill()
-        line3Path.fill()
+        // Central SuperClip Lightning Bolt Symbol
+        let boltCx = sheetRect.midX
+        let boltCy = sheetRect.midY - sheetRect.height * 0.025
+        let boltW = sheetRect.width * 0.48
+        let boltH = sheetRect.height * 0.54
+
+        let boltPath = NSBezierPath()
+        let p1 = NSPoint(x: boltCx + boltW * 0.14, y: boltCy + boltH * 0.48)
+        let p2 = NSPoint(x: boltCx - boltW * 0.44, y: boltCy + boltH * 0.03)
+        let p3 = NSPoint(x: boltCx - boltW * 0.04, y: boltCy + boltH * 0.03)
+        let p4 = NSPoint(x: boltCx - boltW * 0.15, y: boltCy - boltH * 0.48)
+        let p5 = NSPoint(x: boltCx + boltW * 0.44, y: boltCy - boltH * 0.03)
+        let p6 = NSPoint(x: boltCx + boltW * 0.04, y: boltCy - boltH * 0.03)
+
+        boltPath.move(to: p1)
+        boltPath.line(to: p2)
+        boltPath.line(to: p3)
+        boltPath.line(to: p4)
+        boltPath.line(to: p5)
+        boltPath.line(to: p6)
+        boltPath.close()
+
+        // Warm glowing shadow behind the lightning bolt
+        if pixelSize >= 32 {
+            let boltShadow = NSShadow()
+            boltShadow.shadowColor = NSColor(calibratedRed: 0.95, green: 0.45, blue: 0.0, alpha: 0.30)
+            boltShadow.shadowBlurRadius = CGFloat(pixelSize) * 0.022
+            boltShadow.shadowOffset = NSSize(width: 0, height: -CGFloat(pixelSize) * 0.008)
+            boltShadow.set()
+        }
+
+        // Vibrant Electric Gold to Ember Orange Gradient
+        let boltGradient = NSGradient(
+            colors: [
+                NSColor(calibratedRed: 1.0, green: 0.86, blue: 0.12, alpha: 1.0),
+                NSColor(calibratedRed: 1.0, green: 0.58, blue: 0.00, alpha: 1.0),
+                NSColor(calibratedRed: 0.96, green: 0.30, blue: 0.00, alpha: 1.0)
+            ],
+            atLocations: [0.0, 0.48, 1.0],
+            colorSpace: .deviceRGB
+        )
+        boltGradient?.draw(in: boltPath, angle: -80.0)
+        NSShadow().set()
+
+        // Highlight stroke on lightning bolt
+        NSColor(calibratedRed: 0.88, green: 0.48, blue: 0.0, alpha: 0.50).setStroke()
+        boltPath.lineWidth = max(0.8, CGFloat(pixelSize) * 0.004)
+        boltPath.stroke()
 
         // E. Top Metallic Spring Clip (Polished Chrome / Titanium with Specular Highlight)
         let clipW = boardW * 0.44

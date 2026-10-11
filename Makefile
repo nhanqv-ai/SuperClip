@@ -197,7 +197,7 @@ verify-app: bundle
 # Static Zero-Emoji Lint Check
 lint:
 	@echo "Verifying strict styling constraints (0 emojis)..."
-	@$(PYTHON) Scripts/lint_emojis.py Sources/ Tests/ Scripts/ Makefile Package.swift PROJECT.md TEST_INFRA.md Contents/
+	@$(PYTHON) Scripts/lint_emojis.py Sources/ Tests/ Scripts/ Makefile Package.swift README.md LICENSE
 	@echo "Styling check passed: 0 emojis detected, SF Symbols compliant."
 
 # Automated Verification Runner (R5)

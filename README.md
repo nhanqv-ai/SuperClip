@@ -1,6 +1,24 @@
-# SuperClip
+<p align="center">
+  <img src="Assets/AppIcon.png" alt="SuperClip App Icon" width="128" height="128" />
+</p>
 
-[English](#english) | [Tiếng Việt](#tiếng-việt)
+<h1 align="center">SuperClip</h1>
+
+<p align="center">
+  <strong>Ultra-lightweight, Lightning-Fast Native macOS Clipboard Manager</strong><br>
+  <em>Swift & SwiftUI &bull; Zero Accessibility Permissions &bull; Multi-language Support</em>
+</p>
+
+<p align="center">
+  <a href="#english">English</a> &bull; <a href="#tiếng-việt">Tiếng Việt</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/nhanqv-ai/SuperClip/releases"><img src="https://img.shields.io/github/v/release/nhanqv-ai/SuperClip?style=flat-square&color=blue" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" alt="License"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey.svg?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/Swift-6.0-orange.svg?style=flat-square" alt="Swift">
+</p>
 
 ---
 
