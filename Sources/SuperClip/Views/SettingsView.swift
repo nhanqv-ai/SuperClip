@@ -608,12 +608,6 @@ public struct SettingsView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
 
-            Text("Native ultra-compact clipboard manager for macOS inspired by CopyClip.")
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-
             Divider()
 
             HStack(spacing: 16) {
