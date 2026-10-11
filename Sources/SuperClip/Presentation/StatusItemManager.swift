@@ -362,7 +362,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         NSApp.orderFrontStandardAboutPanel(
             options: [
                 NSApplication.AboutPanelOptionKey.applicationName: "SuperClip",
-                NSApplication.AboutPanelOptionKey.version: "1.0.0"
+                NSApplication.AboutPanelOptionKey.version: (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.1")
             ]
         )
     }

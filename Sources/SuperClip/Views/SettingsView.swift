@@ -65,7 +65,9 @@ public struct KeyCombinationHelper {
         CarbonKeyItem(code: 28, name: "8"),
         CarbonKeyItem(code: 25, name: "9"),
         CarbonKeyItem(code: 49, name: "Space"),
+        CarbonKeyItem(code: 36, name: "Return"),
         CarbonKeyItem(code: 48, name: "Tab"),
+        CarbonKeyItem(code: 53, name: "Escape"),
         CarbonKeyItem(code: 50, name: "`")
     ]
 
@@ -194,7 +196,7 @@ public struct SettingsView: View {
             Divider()
             footerBar
         }
-        .frame(width: 460, height: 440)
+        .frame(width: 490, height: 475)
         .background(Color(nsColor: .windowBackgroundColor))
         .onDisappear {
             stopRecordingHotKey()
@@ -204,7 +206,7 @@ public struct SettingsView: View {
     // MARK: - Top Tab Bar (Icon above Label with Active Highlight)
 
     private var topTabBar: some View {
-        HStack(spacing: 24) {
+        HStack(spacing: 20) {
             ForEach(SettingsTab.allCases) { tab in
                 Button(action: {
                     stopRecordingHotKey()
@@ -218,6 +220,7 @@ public struct SettingsView: View {
                             .frame(height: 24)
                         Text(tab.localizedTitle)
                             .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
+                            .lineLimit(1)
                     }
                     .foregroundColor(selectedTab == tab ? .primary : .secondary)
                     .padding(.horizontal, 10)
@@ -415,80 +418,104 @@ public struct SettingsView: View {
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Text(LocalizationManager.shared.tr(.shortcutLabel))
-                        .font(.system(size: 12))
+            VStack(alignment: .leading, spacing: 10) {
+                // Top Action Bar (shortcut label + badge + Spacer + Action buttons)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) {
+                        Text(LocalizationManager.shared.tr(.shortcutLabel))
+                            .font(.system(size: 12))
+                            .lineLimit(1)
+                            .fixedSize()
 
-                    Text(KeyCombinationHelper.formattedShortcut(
-                        keyCode: storageManager.settings.hotKeyKeyCode,
-                        modifiers: storageManager.settings.hotKeyModifiers
-                    ))
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(nsColor: .textBackgroundColor))
-                    .cornerRadius(5)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color(nsColor: .separatorColor), lineWidth: 0.8)
-                    )
+                        shortcutBadgeView
 
-                    if isRecordingHotKey {
-                        Text(LocalizationManager.shared.tr(.pressShortcutHint))
-                            .font(.system(size: 11))
-                            .foregroundColor(.accentColor)
+                        Spacer()
 
-                        Button(LocalizationManager.shared.tr(.cancelButton)) {
-                            stopRecordingHotKey()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    } else {
-                        Button(LocalizationManager.shared.tr(.recordButton)) {
-                            startRecordingHotKey()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                        recordActionButton
+
+                        quickPresetsMenuView
                     }
 
-                    Menu(LocalizationManager.shared.tr(.quickPresetsTitle)) {
-                        Button("Option + V (Default)") {
-                            applyHotKey(keyCode: 9, modifiers: UInt32(optionKey))
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Text(LocalizationManager.shared.tr(.shortcutLabel))
+                                .font(.system(size: 12))
+                                .lineLimit(1)
+                                .fixedSize()
+
+                            shortcutBadgeView
+
+                            Spacer()
                         }
-                        Button("Cmd + Shift + V") {
-                            applyHotKey(keyCode: 9, modifiers: UInt32(cmdKey | shiftKey))
-                        }
-                        Button("Option + Space") {
-                            applyHotKey(keyCode: 49, modifiers: UInt32(optionKey))
+
+                        HStack(spacing: 8) {
+                            Spacer()
+                            recordActionButton
+                            quickPresetsMenuView
                         }
                     }
-                    .menuStyle(.borderedButton)
-                    .controlSize(.small)
                 }
 
+                // Dedicated Recording State Banner
+                if isRecordingHotKey {
+                    HStack(spacing: 6) {
+                        Image(systemName: "record.circle")
+                            .foregroundColor(.accentColor)
+                            .font(.system(size: 11, weight: .medium))
+                        Text(LocalizationManager.shared.tr(.pressShortcutBannerHint))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.accentColor)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Color.accentColor.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                // Helper description text
                 Text(LocalizationManager.shared.tr(.shortcutHelperText))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 12) {
-                    Toggle("Option", isOn: Binding(
+                // Modifiers Row
+                HStack(spacing: 16) {
+                    Toggle("Option (⌥)", isOn: Binding(
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(optionKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(optionKey), enable: $0) }
                     ))
-                    Toggle("Command", isOn: Binding(
+                    Toggle("Command (⌘)", isOn: Binding(
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(cmdKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(cmdKey), enable: $0) }
                     ))
-                    Toggle("Control", isOn: Binding(
+                    Toggle("Control (⌃)", isOn: Binding(
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(controlKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(controlKey), enable: $0) }
                     ))
-                    Toggle("Shift", isOn: Binding(
+                    Toggle("Shift (⇧)", isOn: Binding(
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(shiftKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(shiftKey), enable: $0) }
                     ))
+                    Spacer()
+                }
+                .toggleStyle(.checkbox)
+                .font(.system(size: 11))
+
+                // Key Selection Row
+                HStack(spacing: 8) {
+                    Text(LocalizationManager.shared.tr(.keyLabel))
+                        .font(.system(size: 12))
+                        .frame(width: 80, alignment: .leading)
 
                     Picker("", selection: Binding(
                         get: { storageManager.settings.hotKeyKeyCode },
@@ -499,10 +526,21 @@ public struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(width: 75)
+                    .frame(width: 120)
+
+                    if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
+                        Button(action: {
+                            applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
+                        }) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 11))
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Reset shortcut to default (Option + V)")
+                    }
+
+                    Spacer()
                 }
-                .toggleStyle(.checkbox)
-                .font(.system(size: 11))
             }
 
             if let warning = hotKeyWarningMessage {
@@ -525,6 +563,63 @@ public struct SettingsView: View {
                         .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
                 )
         )
+    }
+
+    // MARK: - Hotkey Subviews
+
+    private var shortcutBadgeView: some View {
+        Text(KeyCombinationHelper.formattedShortcut(
+            keyCode: storageManager.settings.hotKeyKeyCode,
+            modifiers: storageManager.settings.hotKeyModifiers
+        ))
+        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+        .lineLimit(1)
+        .fixedSize()
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(nsColor: .textBackgroundColor))
+        .cornerRadius(5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(isRecordingHotKey ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isRecordingHotKey ? 1.5 : 0.8)
+        )
+    }
+
+    private var recordActionButton: some View {
+        Group {
+            if isRecordingHotKey {
+                Button(LocalizationManager.shared.tr(.cancelButton)) {
+                    stopRecordingHotKey()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .fixedSize()
+            } else {
+                Button(LocalizationManager.shared.tr(.recordShortcutButton)) {
+                    startRecordingHotKey()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .fixedSize()
+            }
+        }
+    }
+
+    private var quickPresetsMenuView: some View {
+        Menu(LocalizationManager.shared.tr(.quickPresetsTitle)) {
+            Button("Option + V (Default)") {
+                applyHotKey(keyCode: 9, modifiers: UInt32(optionKey))
+            }
+            Button("Cmd + Shift + V") {
+                applyHotKey(keyCode: 9, modifiers: UInt32(cmdKey | shiftKey))
+            }
+            Button("Option + Space") {
+                applyHotKey(keyCode: 49, modifiers: UInt32(optionKey))
+            }
+        }
+        .menuStyle(.borderedButton)
+        .controlSize(.small)
+        .fixedSize()
     }
 
     // MARK: - Ignored Apps Tab Content

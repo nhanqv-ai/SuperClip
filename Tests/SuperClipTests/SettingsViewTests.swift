@@ -214,5 +214,45 @@ public struct SettingsViewTests {
         TestHarness.assertEqual(clipListView25.recentItems.count, 25, "ClipListView displays exactly 25 recent items when displayCapacity is 25")
         let mainView25 = MainContentView(storageManager: dispStorage)
         TestHarness.assertEqual(mainView25.partitionedClips.recent.count, 25, "MainContentView caps recent clips to 25 when displayCapacity is 25")
+
+        // 10. Hotkey Configuration Redesign & Multi-Language Robustness
+        TestHarness.assertEqual(KeyCombinationHelper.keyName(for: 49), "Space", "Key 49 name is Space")
+        TestHarness.assertEqual(KeyCombinationHelper.keyName(for: 36), "Return", "Key 36 name is Return")
+        TestHarness.assertEqual(KeyCombinationHelper.keyName(for: 48), "Tab", "Key 48 name is Tab")
+        TestHarness.assertEqual(KeyCombinationHelper.keyName(for: 53), "Escape", "Key 53 name is Escape")
+
+        TestHarness.assertTrue(KeyCombinationHelper.standardKeys.contains { $0.code == 49 && $0.name == "Space" }, "standardKeys contains Space")
+        TestHarness.assertTrue(KeyCombinationHelper.standardKeys.contains { $0.code == 36 && $0.name == "Return" }, "standardKeys contains Return")
+        TestHarness.assertTrue(KeyCombinationHelper.standardKeys.contains { $0.code == 48 && $0.name == "Tab" }, "standardKeys contains Tab")
+        TestHarness.assertTrue(KeyCombinationHelper.standardKeys.contains { $0.code == 53 && $0.name == "Escape" }, "standardKeys contains Escape")
+
+        let optSpaceFormatted2 = KeyCombinationHelper.formattedShortcut(keyCode: 49, modifiers: UInt32(optionKey))
+        TestHarness.assertEqual(optSpaceFormatted2, "Option + Space", "Option + Space shortcut formatted properly")
+
+        let locMgr = LocalizationManager.shared
+        locMgr.setLanguage(.english)
+        TestHarness.assertEqual(locMgr.tr(.keyLabel), "Key:", "English keyLabel is 'Key:'")
+        TestHarness.assertEqual(locMgr.tr(.recordShortcutButton), "Record Shortcut", "English recordShortcutButton is 'Record Shortcut'")
+        TestHarness.assertEqual(locMgr.tr(.quickPresetsTitle), "Quick Presets", "English quickPresetsTitle is 'Quick Presets'")
+        TestHarness.assertEqual(locMgr.tr(.pressShortcutBannerHint), "Press desired key combination, or press Esc to cancel", "English banner hint matches")
+
+        locMgr.setLanguage(.vietnamese)
+        TestHarness.assertEqual(locMgr.tr(.keyLabel), "Phím:", "Vietnamese keyLabel is 'Phím:'")
+        TestHarness.assertEqual(locMgr.tr(.quickPresetsTitle), "Phím tắt gợi ý", "Vietnamese quickPresetsTitle is 'Phím tắt gợi ý'")
+        TestHarness.assertEqual(locMgr.tr(.pressShortcutBannerHint), "Nhấn tổ hợp phím mong muốn, hoặc nhấn Esc để hủy", "Vietnamese banner hint matches")
+
+        locMgr.setLanguage(.german)
+        TestHarness.assertEqual(locMgr.tr(.keyLabel), "Taste:", "German keyLabel is 'Taste:'")
+        TestHarness.assertEqual(locMgr.tr(.quickPresetsTitle), "Schnellvoreinstellungen", "German quickPresetsTitle is 'Schnellvoreinstellungen'")
+        TestHarness.assertEqual(locMgr.tr(.pressShortcutBannerHint), "Tastenkombination drücken oder Esc zum Abbrechen", "German banner hint matches")
+
+        locMgr.setLanguage(.english)
+
+        // SettingsWindowController dimensions check
+        let winCtrl = SettingsWindowController(storageManager: storage)
+        if let w = winCtrl.window {
+            TestHarness.assertEqual(w.contentViewController?.preferredContentSize.width, 490, "Settings preferred content width is 490")
+            TestHarness.assertEqual(w.contentViewController?.preferredContentSize.height, 475, "Settings preferred content height is 475")
+        }
     }
 }

@@ -41,7 +41,7 @@ public final class SettingsWindowController: NSWindowController, NSWindowDelegat
         self.onPresentationDismissalRequested = onPresentationDismissalRequested
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 440),
+            contentRect: NSRect(x: 0, y: 0, width: 490, height: 475),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -49,6 +49,7 @@ public final class SettingsWindowController: NSWindowController, NSWindowDelegat
         window.title = "SuperClip Settings"
         window.isReleasedWhenClosed = false
         window.level = .normal
+        window.setContentSize(NSSize(width: 490, height: 475))
         window.setFrameAutosaveName("SuperClipSettingsWindow")
 
         super.init(window: window)
@@ -73,7 +74,7 @@ public final class SettingsWindowController: NSWindowController, NSWindowDelegat
             }
         )
         let hostingController = NSHostingController(rootView: settingsView)
-        hostingController.preferredContentSize = NSSize(width: 460, height: 440)
+        hostingController.preferredContentSize = NSSize(width: 490, height: 475)
         window.contentViewController = hostingController
     }
 
@@ -81,7 +82,7 @@ public final class SettingsWindowController: NSWindowController, NSWindowDelegat
     public func setRootView<V: View>(_ view: V) {
         guard let window = self.window else { return }
         let hostingController = NSHostingController(rootView: view)
-        hostingController.preferredContentSize = NSSize(width: 460, height: 440)
+        hostingController.preferredContentSize = NSSize(width: 490, height: 475)
         window.contentViewController = hostingController
     }
 

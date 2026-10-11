@@ -134,9 +134,12 @@ public enum L10nKey: Sendable {
     case shortcutLabel
     case shortcutHelperText
     case recordButton
+    case recordShortcutButton
     case cancelButton
     case pressShortcutHint
+    case pressShortcutBannerHint
     case quickPresetsTitle
+    case keyLabel
 
     // Ignored Apps Preferences
     case ignoredAppsDesc
@@ -629,6 +632,18 @@ public enum L10nKey: Sendable {
             default: return "Record"
             }
 
+        case .recordShortcutButton:
+            switch lang {
+            case .vietnamese: return "Ghi phím"
+            case .simplifiedChinese: return "录制快捷键"
+            case .japanese: return "ショートカットを記録"
+            case .korean: return "단축키 기록"
+            case .spanish: return "Grabar atajo"
+            case .french: return "Enregistrer le raccourci"
+            case .german: return "Aufnehmen"
+            default: return "Record Shortcut"
+            }
+
         case .cancelButton:
             switch lang {
             case .vietnamese: return "Hủy"
@@ -653,6 +668,18 @@ public enum L10nKey: Sendable {
             default: return "Press desired key combination..."
             }
 
+        case .pressShortcutBannerHint:
+            switch lang {
+            case .vietnamese: return "Nhấn tổ hợp phím mong muốn, hoặc nhấn Esc để hủy"
+            case .simplifiedChinese: return "按下所需快捷键组合，或按 Esc 取消"
+            case .japanese: return "希望のショートカットキーを押すか、Escでキャンセル"
+            case .korean: return "원하는 단축키 조합을 누르거나 Esc를 눌러 취소"
+            case .spanish: return "Presiona la combinación deseada o Esc para cancelar"
+            case .french: return "Appuyez sur le raccourci souhaité ou Échap pour annuler"
+            case .german: return "Tastenkombination drücken oder Esc zum Abbrechen"
+            default: return "Press desired key combination, or press Esc to cancel"
+            }
+
         case .quickPresetsTitle:
             switch lang {
             case .vietnamese: return "Phím tắt gợi ý"
@@ -663,6 +690,18 @@ public enum L10nKey: Sendable {
             case .french: return "Préréglages rapides"
             case .german: return "Schnellvoreinstellungen"
             default: return "Quick Presets"
+            }
+
+        case .keyLabel:
+            switch lang {
+            case .vietnamese: return "Phím:"
+            case .simplifiedChinese: return "按键:"
+            case .japanese: return "キー:"
+            case .korean: return "키:"
+            case .spanish: return "Tecla:"
+            case .french: return "Touche :"
+            case .german: return "Taste:"
+            default: return "Key:"
             }
 
         case .ignoredAppsDesc:
