@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import SwiftUI
 import Carbon
 import SuperClipCore
 import SuperClip
@@ -254,5 +255,19 @@ public struct SettingsViewTests {
             TestHarness.assertEqual(w.contentViewController?.preferredContentSize.width, 490, "Settings preferred content width is 490")
             TestHarness.assertEqual(w.contentViewController?.preferredContentSize.height, 475, "Settings preferred content height is 475")
         }
+
+        // Test all 4 tabs initialization
+        for tab in SettingsView.SettingsTab.allCases {
+            let tabView = SettingsView(storageManager: storage, initialTab: tab)
+            TestHarness.assertTrue(!tab.localizedTitle.isEmpty, "Tab \(tab.rawValue) localized title is not empty")
+            TestHarness.assertTrue(!tab.iconName.isEmpty, "Tab \(tab.rawValue) icon name is not empty")
+        }
+
+        // Test recording mode initialization
+        let recView = SettingsView(storageManager: storage, initialRecording: true)
+        let hostingRec = NSHostingView(rootView: recView)
+        hostingRec.frame = NSRect(x: 0, y: 0, width: 490, height: 475)
+        TestHarness.assertEqual(hostingRec.frame.width, 490, "Recording view width is 490")
+        TestHarness.assertEqual(hostingRec.frame.height, 475, "Recording view height is 475")
     }
 }

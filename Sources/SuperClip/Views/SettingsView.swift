@@ -178,6 +178,8 @@ public struct SettingsView: View {
         hotKeyManager: HotKeyManaging = HotKeyManager.shared,
         launchAtLoginManager: any LaunchAtLoginManaging = LaunchAtLoginManager.shared,
         updateManager: UpdateManager = UpdateManager.shared,
+        initialTab: SettingsTab = .general,
+        initialRecording: Bool = false,
         onClose: (() -> Void)? = nil,
         onDismiss: (() -> Void)? = nil
     ) {
@@ -185,6 +187,8 @@ public struct SettingsView: View {
         self.hotKeyManager = hotKeyManager
         self.launchAtLoginManager = launchAtLoginManager
         self.updateManager = updateManager
+        self._selectedTab = State(initialValue: initialTab)
+        self._isRecordingHotKey = State(initialValue: initialRecording)
         self.onDismiss = onClose ?? onDismiss
     }
 
@@ -214,19 +218,19 @@ public struct SettingsView: View {
                         selectedTab = tab
                     }
                 }) {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 2) {
                         Image(systemName: tab.iconName)
-                            .font(.system(size: 20, weight: .regular))
-                            .frame(height: 24)
+                            .font(.system(size: 18, weight: .regular))
+                            .frame(height: 22)
                         Text(tab.localizedTitle)
                             .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
                             .lineLimit(1)
                     }
                     .foregroundColor(selectedTab == tab ? .primary : .secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(selectedTab == tab ? Color.secondary.opacity(0.15) : Color.clear)
                     )
                     .contentShape(Rectangle())
@@ -235,7 +239,7 @@ public struct SettingsView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
     }
 
@@ -244,7 +248,7 @@ public struct SettingsView: View {
     @ViewBuilder
     private var contentArea: some View {
         ScrollView {
-            VStack(spacing: 14) {
+            VStack(spacing: 8) {
                 switch selectedTab {
                 case .general:
                     generalTabContent
@@ -256,14 +260,15 @@ public struct SettingsView: View {
                     aboutTabContent
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
         }
     }
 
     // MARK: - General Tab Content
 
     private var generalTabContent: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 8) {
             clippingsCard
             optionsCard
         }
@@ -272,15 +277,15 @@ public struct SettingsView: View {
     // MARK: - Clippings Card
 
     private var clippingsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(LocalizationManager.shared.tr(.clippingsTitle))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
                 .foregroundColor(.primary)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 8) {
                     Text(LocalizationManager.shared.tr(.rememberLabel))
-                        .font(.system(size: 12))
+                        .font(.system(size: 11.5))
                         .frame(width: 80, alignment: .leading)
 
                     TextField("", value: Binding(
@@ -288,7 +293,7 @@ public struct SettingsView: View {
                         set: { storageManager.capacity = max(10, min($0, 500)) }
                     ), formatter: NumberFormatter())
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 60)
+                    .frame(width: 55)
 
                     Stepper("", value: Binding(
                         get: { storageManager.capacity },
@@ -297,13 +302,13 @@ public struct SettingsView: View {
                     .labelsHidden()
 
                     Text(LocalizationManager.shared.tr(.clippingsUnit))
-                        .font(.system(size: 12))
+                        .font(.system(size: 11.5))
                         .foregroundColor(.secondary)
                 }
 
                 HStack(spacing: 8) {
                     Text(LocalizationManager.shared.tr(.displayLabel))
-                        .font(.system(size: 12))
+                        .font(.system(size: 11.5))
                         .frame(width: 80, alignment: .leading)
 
                     TextField("", value: Binding(
@@ -315,7 +320,7 @@ public struct SettingsView: View {
                         }
                     ), formatter: NumberFormatter())
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 60)
+                    .frame(width: 55)
 
                     Stepper("", value: Binding(
                         get: { storageManager.settings.displayCapacity },
@@ -328,23 +333,22 @@ public struct SettingsView: View {
                     .labelsHidden()
 
                     Text(LocalizationManager.shared.tr(.clippingsUnit))
-                        .font(.system(size: 12))
+                        .font(.system(size: 11.5))
                         .foregroundColor(.secondary)
                 }
             }
 
             Text(LocalizationManager.shared.tr(.pinGuaranteeNote))
-                .font(.system(size: 11))
+                .font(.system(size: 10.5))
                 .foregroundColor(.secondary)
-                .padding(.top, 2)
         }
-        .padding(14)
+        .padding(9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
                 )
         )
@@ -353,12 +357,12 @@ public struct SettingsView: View {
     // MARK: - Options Card
 
     private var optionsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 7) {
             Text(LocalizationManager.shared.tr(.optionsTitle))
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
                 .foregroundColor(.primary)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Toggle(LocalizationManager.shared.tr(.startAtLogin), isOn: Binding(
                     get: { storageManager.settings.launchAtLogin },
                     set: { newVal in
@@ -369,7 +373,7 @@ public struct SettingsView: View {
                     }
                 ))
                 .toggleStyle(.checkbox)
-                .font(.system(size: 12))
+                .font(.system(size: 11.5))
 
                 Toggle(LocalizationManager.shared.tr(.recordClipboardHistory), isOn: Binding(
                     get: { storageManager.settings.recordClipboardHistory },
@@ -380,7 +384,7 @@ public struct SettingsView: View {
                     }
                 ))
                 .toggleStyle(.checkbox)
-                .font(.system(size: 12))
+                .font(.system(size: 11.5))
 
                 Toggle(LocalizationManager.shared.tr(.automaticallyCheckForUpdates), isOn: Binding(
                     get: { storageManager.settings.automaticallyCheckForUpdates },
@@ -391,11 +395,11 @@ public struct SettingsView: View {
                     }
                 ))
                 .toggleStyle(.checkbox)
-                .font(.system(size: 12))
+                .font(.system(size: 11.5))
 
                 HStack(spacing: 8) {
                     Text(LocalizationManager.shared.tr(.languageLabel))
-                        .font(.system(size: 12))
+                        .font(.system(size: 11.5))
                         .frame(width: 80, alignment: .leading)
 
                     Picker("", selection: Binding(
@@ -411,35 +415,34 @@ public struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(width: 180)
+                    .frame(width: 160)
                 }
-                .padding(.top, 2)
             }
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 // Top Action Bar (shortcut label + badge + Spacer + Action buttons)
                 ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Text(LocalizationManager.shared.tr(.shortcutLabel))
-                            .font(.system(size: 12))
+                            .font(.system(size: 11.5))
                             .lineLimit(1)
                             .fixedSize()
 
                         shortcutBadgeView
 
-                        Spacer()
+                        Spacer(minLength: 4)
 
                         recordActionButton
 
                         quickPresetsMenuView
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack(spacing: 6) {
                             Text(LocalizationManager.shared.tr(.shortcutLabel))
-                                .font(.system(size: 12))
+                                .font(.system(size: 11.5))
                                 .lineLimit(1)
                                 .fixedSize()
 
@@ -448,7 +451,7 @@ public struct SettingsView: View {
                             Spacer()
                         }
 
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             Spacer()
                             recordActionButton
                             quickPresetsMenuView
@@ -461,22 +464,22 @@ public struct SettingsView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "record.circle")
                             .foregroundColor(.accentColor)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 10.5, weight: .medium))
                         Text(LocalizationManager.shared.tr(.pressShortcutBannerHint))
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 10.5, weight: .medium))
                             .foregroundColor(.accentColor)
                             .lineLimit(1)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer()
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .fill(Color.accentColor.opacity(0.12))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
                     )
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -484,12 +487,12 @@ public struct SettingsView: View {
 
                 // Helper description text
                 Text(LocalizationManager.shared.tr(.shortcutHelperText))
-                    .font(.system(size: 11))
+                    .font(.system(size: 10.5))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 // Modifiers Row
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Toggle("Option (⌥)", isOn: Binding(
                         get: { (storageManager.settings.hotKeyModifiers & UInt32(optionKey)) != 0 },
                         set: { toggleModifier(flag: UInt32(optionKey), enable: $0) }
@@ -514,7 +517,7 @@ public struct SettingsView: View {
                 // Key Selection Row
                 HStack(spacing: 8) {
                     Text(LocalizationManager.shared.tr(.keyLabel))
-                        .font(.system(size: 12))
+                        .font(.system(size: 11.5))
                         .frame(width: 80, alignment: .leading)
 
                     Picker("", selection: Binding(
@@ -533,7 +536,7 @@ public struct SettingsView: View {
                             applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
                         }) {
                             Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 11))
+                                .font(.system(size: 10.5))
                         }
                         .buttonStyle(.borderless)
                         .help("Reset shortcut to default (Option + V)")
@@ -548,18 +551,18 @@ public struct SettingsView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundColor(.orange)
                     Text(warning)
-                        .font(.system(size: 11))
+                        .font(.system(size: 10.5))
                         .foregroundColor(.orange)
                 }
             }
         }
-        .padding(14)
+        .padding(9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
                 )
         )
@@ -572,15 +575,15 @@ public struct SettingsView: View {
             keyCode: storageManager.settings.hotKeyKeyCode,
             modifiers: storageManager.settings.hotKeyModifiers
         ))
-        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+        .font(.system(size: 11, weight: .semibold, design: .monospaced))
         .lineLimit(1)
         .fixedSize()
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
         .background(Color(nsColor: .textBackgroundColor))
-        .cornerRadius(5)
+        .cornerRadius(4)
         .overlay(
-            RoundedRectangle(cornerRadius: 5)
+            RoundedRectangle(cornerRadius: 4)
                 .stroke(isRecordingHotKey ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isRecordingHotKey ? 1.5 : 0.8)
         )
     }
@@ -620,6 +623,7 @@ public struct SettingsView: View {
         .menuStyle(.borderedButton)
         .controlSize(.small)
         .fixedSize()
+        .disabled(isRecordingHotKey)
     }
 
     // MARK: - Ignored Apps Tab Content
@@ -1103,7 +1107,7 @@ public struct SettingsView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Helper Methods
@@ -1141,6 +1145,7 @@ public struct SettingsView: View {
     }
 
     private func applyHotKey(keyCode: UInt32, modifiers: UInt32) {
+        stopRecordingHotKey()
         guard KeyCombinationHelper.isValidHotKey(modifiers: modifiers) else {
             hotKeyWarningMessage = "At least one modifier (Option, Command, Control) is required."
             return
