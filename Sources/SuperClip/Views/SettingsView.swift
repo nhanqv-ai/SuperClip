@@ -430,98 +430,44 @@ public struct SettingsView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 6) {
-                // Top Action Bar (shortcut label + badge + reset + Spacer + Action buttons)
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 6) {
-                        Text(LocalizationManager.shared.tr(.shortcutLabel))
-                            .font(.system(size: 11.5))
-                            .lineLimit(1)
-                            .fixedSize()
+                // Top Action Bar (shortcut label + interactive input field + reset + Spacer + Quick Presets)
+                HStack(spacing: 8) {
+                    Text(LocalizationManager.shared.tr(.shortcutLabel))
+                        .font(.system(size: 11.5))
+                        .lineLimit(1)
+                        .fixedSize()
 
-                        shortcutBadgeView
+                    shortcutInputField
 
-                        if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
-                            Button(action: {
-                                applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
-                            }) {
-                                Image(systemName: "arrow.counterclockwise")
-                                    .font(.system(size: 10.5))
-                            }
-                            .buttonStyle(.borderless)
-                            .help("Reset shortcut to default (Option + V)")
-                            .disabled(isRecordingHotKey)
+                    if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
+                        Button(action: {
+                            applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
+                        }) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 10.5))
                         }
-
-                        Spacer(minLength: 4)
-
-                        recordActionButton
-
-                        quickPresetsMenuView
+                        .buttonStyle(.borderless)
+                        .help("Reset shortcut to default (Option + V)")
+                        .disabled(isRecordingHotKey)
                     }
 
-                    VStack(alignment: .leading, spacing: 5) {
-                        HStack(spacing: 6) {
-                            Text(LocalizationManager.shared.tr(.shortcutLabel))
-                                .font(.system(size: 11.5))
-                                .lineLimit(1)
-                                .fixedSize()
+                    Spacer()
 
-                            shortcutBadgeView
-
-                            if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
-                                Button(action: {
-                                    applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
-                                }) {
-                                    Image(systemName: "arrow.counterclockwise")
-                                        .font(.system(size: 10.5))
-                                }
-                                .buttonStyle(.borderless)
-                                .help("Reset shortcut to default (Option + V)")
-                                .disabled(isRecordingHotKey)
-                            }
-
-                            Spacer()
-                        }
-
-                        HStack(spacing: 6) {
-                            Spacer()
-                            recordActionButton
-                            quickPresetsMenuView
-                        }
-                    }
+                    quickPresetsMenuView
                 }
 
-                // Dedicated Recording State Banner
+                // Helper description text or active recording hint
                 if isRecordingHotKey {
-                    HStack(spacing: 6) {
-                        Image(systemName: "record.circle")
-                            .foregroundColor(.accentColor)
-                            .font(.system(size: 10.5, weight: .medium))
-                        Text(LocalizationManager.shared.tr(.pressShortcutBannerHint))
-                            .font(.system(size: 10.5, weight: .medium))
-                            .foregroundColor(.accentColor)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(Color.accentColor.opacity(0.12))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-                    )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    Text(LocalizationManager.shared.tr(.pressShortcutBannerHint))
+                        .font(.system(size: 10.5))
+                        .foregroundColor(.accentColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(LocalizationManager.shared.tr(.shortcutHelperText))
+                        .font(.system(size: 10.5))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
-                // Helper description text
-                Text(LocalizationManager.shared.tr(.shortcutHelperText))
-                    .font(.system(size: 10.5))
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if let warning = hotKeyWarningMessage {
@@ -548,43 +494,57 @@ public struct SettingsView: View {
 
     // MARK: - Hotkey Subviews
 
-    private var shortcutBadgeView: some View {
-        Text(KeyCombinationHelper.formattedShortcut(
-            keyCode: storageManager.settings.hotKeyKeyCode,
-            modifiers: storageManager.settings.hotKeyModifiers
-        ))
-        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-        .lineLimit(1)
-        .fixedSize()
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
-        .background(Color(nsColor: .textBackgroundColor))
-        .cornerRadius(4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(isRecordingHotKey ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isRecordingHotKey ? 1.5 : 0.8)
-        )
-    }
-
-    private var recordActionButton: some View {
-        Group {
+    private var shortcutInputField: some View {
+        Button(action: {
             if isRecordingHotKey {
-                Button(LocalizationManager.shared.tr(.cancelButton)) {
-                    hotKeyWarningMessage = nil
-                    stopRecordingHotKey()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .fixedSize()
+                hotKeyWarningMessage = nil
+                stopRecordingHotKey()
             } else {
-                Button(LocalizationManager.shared.tr(.recordShortcutButton)) {
-                    startRecordingHotKey()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .fixedSize()
+                startRecordingHotKey()
             }
+        }) {
+            HStack(spacing: 5) {
+                if isRecordingHotKey {
+                    Image(systemName: "record.circle")
+                        .font(.system(size: 10))
+                        .foregroundColor(.accentColor)
+
+                    Text(LocalizationManager.shared.tr(.pressShortcutHint))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.accentColor)
+
+                    Button(action: {
+                        hotKeyWarningMessage = nil
+                        stopRecordingHotKey()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 10.5))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(LocalizationManager.shared.tr(.cancelButton))
+                } else {
+                    Text(KeyCombinationHelper.formattedShortcut(
+                        keyCode: storageManager.settings.hotKeyKeyCode,
+                        modifiers: storageManager.settings.hotKeyModifiers
+                    ))
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.primary)
+                }
+            }
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(Color(nsColor: .textBackgroundColor))
+            .cornerRadius(4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(isRecordingHotKey ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isRecordingHotKey ? 1.5 : 0.8)
+            )
         }
+        .buttonStyle(.plain)
+        .help(isRecordingHotKey ? LocalizationManager.shared.tr(.cancelButton) : "Click to record shortcut")
     }
 
     private var quickPresetsMenuView: some View {
