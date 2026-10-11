@@ -166,8 +166,8 @@ public struct MainContentView: View {
             .help("Dismiss (Escape)")
         }
         .padding(.horizontal, 14)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
     }
 
     private var itemCountBadge: some View {
@@ -199,7 +199,7 @@ public struct MainContentView: View {
             }
         )
         .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.bottom, 6)
     }
 
     // MARK: - Content Section
@@ -250,7 +250,7 @@ public struct MainContentView: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.vertical, 4)
+        .padding(.vertical, 3)
     }
 
     private func menuActionRow(title: String, shortcut: String?, action: @escaping () -> Void) -> some View {
@@ -267,7 +267,7 @@ public struct MainContentView: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(MenuRowButtonStyle())

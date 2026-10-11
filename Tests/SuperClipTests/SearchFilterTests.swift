@@ -35,6 +35,19 @@ public struct SearchFilterTests {
         let imgResult = SearchEngine.filter(items: items, query: "1920")
         TestHarness.assertEqual(imgResult.count, 1, "Query '1920' matches image label 'Image (1920x1080)'")
         TestHarness.assertEqual(imgResult.first?.id, c4.id, "Image query matches item c4")
+
+        let anhResult = SearchEngine.filter(items: items, query: "Ảnh")
+        TestHarness.assertEqual(anhResult.count, 1, "Query 'Ảnh' matches image item c4")
+        TestHarness.assertEqual(anhResult.first?.id, c4.id, "Query 'Ảnh' matches item c4")
+
+        let bracketAnhResult = SearchEngine.filter(items: items, query: "[Ảnh]")
+        TestHarness.assertEqual(bracketAnhResult.count, 1, "Query '[Ảnh]' matches image item c4")
+
+        let foldedAnhResult = SearchEngine.filter(items: items, query: "anh")
+        TestHarness.assertEqual(foldedAnhResult.count, 1, "Query 'anh' (diacritic folded) matches image item c4")
+
+        let dimsResult = SearchEngine.filter(items: items, query: "1920x1080")
+        TestHarness.assertEqual(dimsResult.count, 1, "Query '1920x1080' matches image item c4")
         
         // Test 6: Multi-word disjoint tokens
         let multiTokenResult = SearchEngine.filter(items: items, query: "carbon registration")
