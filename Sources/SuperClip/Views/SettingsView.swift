@@ -169,6 +169,7 @@ public struct SettingsView: View {
         HStack(spacing: 24) {
             ForEach(SettingsTab.allCases) { tab in
                 Button(action: {
+                    stopRecordingHotKey()
                     withAnimation(.easeInOut(duration: 0.15)) {
                         selectedTab = tab
                     }
@@ -268,7 +269,7 @@ public struct SettingsView: View {
                         get: { storageManager.settings.displayCapacity },
                         set: { newDisp in
                             var s = storageManager.settings
-                            s.displayCapacity = max(5, min(newDisp, 200))
+                            s.displayCapacity = max(5, min(newDisp, 500))
                             storageManager.settings = s
                         }
                     ), formatter: NumberFormatter())
@@ -279,10 +280,10 @@ public struct SettingsView: View {
                         get: { storageManager.settings.displayCapacity },
                         set: { newDisp in
                             var s = storageManager.settings
-                            s.displayCapacity = max(5, min(newDisp, 200))
+                            s.displayCapacity = max(5, min(newDisp, 500))
                             storageManager.settings = s
                         }
-                    ), in: 5...200, step: 5)
+                    ), in: 5...500, step: 5)
                     .labelsHidden()
 
                     Text("clippings")

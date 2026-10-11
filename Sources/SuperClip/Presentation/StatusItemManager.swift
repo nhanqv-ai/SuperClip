@@ -107,7 +107,10 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
 
         setupStatusItem()
         setupPopover(contentViewController: contentViewController)
-        setupHotKey()
+
+        let initialCode = (storageManager as? StorageManager)?.settings.hotKeyKeyCode ?? UInt32(kVK_ANSI_V)
+        let initialMods = (storageManager as? StorageManager)?.settings.hotKeyModifiers ?? UInt32(optionKey)
+        setupHotKey(keyCode: initialCode, modifiers: initialMods)
     }
 
     // MARK: - Status Item Setup
@@ -162,6 +165,17 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
             }
         }
         hotKeyManager.register(keyCode: keyCode, modifiers: modifiers)
+        updateToolTip(keyCode: keyCode, modifiers: modifiers)
+    }
+
+    private func updateToolTip(keyCode: UInt32, modifiers: UInt32) {
+        guard let button = statusItem.button else { return }
+        if keyCode == UInt32(kVK_ANSI_V) && modifiers == UInt32(optionKey) {
+            button.toolTip = "SuperClip - Clipboard History (Option+V)"
+        } else {
+            let shortcut = KeyCombinationHelper.formattedShortcut(keyCode: keyCode, modifiers: modifiers)
+            button.toolTip = "SuperClip - Clipboard History (\(shortcut))"
+        }
     }
 
     public func updateHotKey(keyCode: UInt32, modifiers: UInt32) {

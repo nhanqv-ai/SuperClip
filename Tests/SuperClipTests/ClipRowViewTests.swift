@@ -74,5 +74,37 @@ public struct ClipRowViewTests {
 
         let imageWithoutDims = ClipItem(id: UUID(), contentType: .image, imageWidth: nil, imageHeight: nil)
         TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithoutDims), "[Ảnh]", "Image without dimensions displays [Ảnh]")
+
+        // 8. Image Search Matching (supports [Ảnh], Ảnh, anh, and dimensions)
+        TestHarness.assertTrue(SearchEngine.matches(item: imageWithDims, query: "Ảnh"), "SearchEngine matches image clip with query 'Ảnh'")
+        TestHarness.assertTrue(SearchEngine.matches(item: imageWithDims, query: "anh"), "SearchEngine matches image clip with query 'anh' (diacritic insensitive)")
+        TestHarness.assertTrue(SearchEngine.matches(item: imageWithDims, query: "[Ảnh]"), "SearchEngine matches image clip with query '[Ảnh]'")
+        TestHarness.assertTrue(SearchEngine.matches(item: imageWithDims, query: "1920x1080"), "SearchEngine matches image clip with dimensions '1920x1080'")
+        TestHarness.assertTrue(SearchEngine.matches(item: imageWithDims, query: "Image"), "SearchEngine matches image clip with query 'Image'")
+
+        // 9. ClipRowView Callback Closures
+        var selectedItem: ClipItem?
+        var pinnedItem: ClipItem?
+        var copiedItem: ClipItem?
+        var deletedItem: ClipItem?
+
+        let rowView = ClipRowView(
+            item: singleLineText,
+            shortcutIndex: 1,
+            isSelected: false,
+            onSelect: { selectedItem = $0 },
+            onTogglePin: { pinnedItem = $0 },
+            onCopy: { copiedItem = $0 },
+            onDelete: { deletedItem = $0 }
+        )
+        rowView.onSelect?(singleLineText)
+        rowView.onTogglePin?(singleLineText)
+        rowView.onCopy?(singleLineText)
+        rowView.onDelete?(singleLineText)
+
+        TestHarness.assertEqual(selectedItem?.id, singleLineText.id, "onSelect invoked with target item")
+        TestHarness.assertEqual(pinnedItem?.id, singleLineText.id, "onTogglePin invoked with target item")
+        TestHarness.assertEqual(copiedItem?.id, singleLineText.id, "onCopy invoked with target item")
+        TestHarness.assertEqual(deletedItem?.id, singleLineText.id, "onDelete invoked with target item")
     }
 }

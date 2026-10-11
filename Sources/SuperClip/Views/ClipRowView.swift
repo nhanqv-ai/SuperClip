@@ -228,6 +228,7 @@ public struct ClipRowView: View {
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
                                 .fill(Color.secondary.opacity(0.12))
                         )
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help(item.isPinned ? "Unpin clip" : "Pin clip")
@@ -242,6 +243,7 @@ public struct ClipRowView: View {
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
                                 .fill(Color.red.opacity(0.12))
                         )
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Delete clip")
@@ -249,12 +251,20 @@ public struct ClipRowView: View {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(.accentColor)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onSelect?(item)
+                    }
             }
 
             if let index = shortcutIndex, (1...9).contains(index) {
                 Text("⌘ \(index)")
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundColor(.secondary.opacity(0.8))
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onSelect?(item)
+                    }
             }
         }
     }

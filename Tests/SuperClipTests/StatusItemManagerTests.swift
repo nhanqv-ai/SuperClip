@@ -135,6 +135,28 @@ public struct StatusItemManagerTests {
         TestHarness.assertEqual(mockHotKey.registeredKeyCode, 8, "Updated keyCode matches")
         TestHarness.assertEqual(mockHotKey.registeredModifiers, 4096, "Updated modifiers match")
 
+        // Test 11: Initialization from StorageManager with saved custom hotkey
+        let customHotKeyDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let customStorage = StorageManager(baseDirectory: customHotKeyDir)
+        var customSettings = customStorage.settings
+        customSettings.hotKeyKeyCode = 49 // Space
+        customSettings.hotKeyModifiers = UInt32(optionKey) // Option
+        customStorage.settings = customSettings
+
+        let mockHotKey2 = MockHotKeyManager()
+        let customManager = StatusItemManager(
+            hotKeyManager: mockHotKey2,
+            storageManager: customStorage
+        )
+        TestHarness.assertTrue(mockHotKey2.registered, "HotKey registered on init with custom storage")
+        TestHarness.assertEqual(mockHotKey2.registeredKeyCode, 49, "Registered keyCode is custom Option+Space (49)")
+        TestHarness.assertEqual(mockHotKey2.registeredModifiers, UInt32(optionKey), "Registered modifier is optionKey")
+        TestHarness.assertEqual(
+            customManager.statusItem.button?.toolTip,
+            "SuperClip - Clipboard History (Option + Space)",
+            "Status button tooltip reflects custom registered shortcut"
+        )
+
         hostWindow.orderOut(nil)
     }
 }
