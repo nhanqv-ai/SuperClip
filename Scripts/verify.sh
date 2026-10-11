@@ -45,6 +45,7 @@ SWIFT_FILES=(
     "$PROJECT_ROOT/Sources/SuperClip/Presentation/PanelFrameCalculator.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Presentation/FloatingClipPanel.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Presentation/FloatingClipPanelPlaceholderView.swift"
+    "$PROJECT_ROOT/Sources/SuperClip/Presentation/ThumbnailHoverPreviewPanel.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Presentation/StatusItemManager.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Services/ShortcutNavigator.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Services/PasteboardWriter.swift"

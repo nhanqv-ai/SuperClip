@@ -140,7 +140,10 @@ public struct ClipRowView: View {
     public var body: some View {
         HStack(spacing: 6) {
             // Clickable row content body (left-aligned)
-            Button(action: { onSelect?(item) }) {
+            Button(action: {
+                ThumbnailHoverPreviewPanel.shared.hide()
+                onSelect?(item)
+            }) {
                 Text(rowContentText)
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(.primary)
@@ -150,6 +153,7 @@ public struct ClipRowView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(textTooltip)
 
             // Right-aligned trailing controls (Pin, Delete on hover, and shortcut badge)
             trailingControls
@@ -166,12 +170,21 @@ public struct ClipRowView: View {
             withAnimation(.easeInOut(duration: 0.12)) {
                 isHovered = hovering
             }
+            if item.contentType == .image {
+                if hovering {
+                    ThumbnailHoverPreviewPanel.shared.show(for: item, thumbnailURL: thumbnailURL)
+                } else {
+                    ThumbnailHoverPreviewPanel.shared.hide()
+                }
+            }
         }
         .contextMenu {
             Button(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip)) {
+                ThumbnailHoverPreviewPanel.shared.hide()
                 onTogglePin?(item)
             }
             Button(LocalizationManager.shared.tr(.copyClip)) {
+                ThumbnailHoverPreviewPanel.shared.hide()
                 if let onCopy = onCopy {
                     onCopy(item)
                 } else {
@@ -180,9 +193,32 @@ public struct ClipRowView: View {
             }
             Divider()
             Button(LocalizationManager.shared.tr(.deleteClip)) {
+                ThumbnailHoverPreviewPanel.shared.hide()
                 onDelete?(item)
             }
         }
+    }
+
+    // MARK: - Tooltip Helper
+
+    public static func textTooltip(for item: ClipItem) -> String {
+        guard item.contentType == .text else { return "" }
+        let raw = item.textContent ?? item.displayTitle
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        // Only show tooltip if the text is long (truncated with ...) or multi-line
+        let isLongOrMultiline = raw.count > 28 || raw.contains("\n") || raw.contains("\r")
+        guard isLongOrMultiline else { return "" }
+
+        if raw.count > 2000 {
+            return String(raw.prefix(2000)) + "..."
+        }
+        return raw
+    }
+
+    private var textTooltip: String {
+        Self.textTooltip(for: item)
     }
 
     // MARK: - Row Content Text
@@ -220,7 +256,10 @@ public struct ClipRowView: View {
         HStack(spacing: 5) {
             if isHovered {
                 // Compact Delete Button (on the left)
-                Button(action: { onDelete?(item) }) {
+                Button(action: {
+                    ThumbnailHoverPreviewPanel.shared.hide()
+                    onDelete?(item)
+                }) {
                     Image(systemName: "trash")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.red)
@@ -235,7 +274,10 @@ public struct ClipRowView: View {
                 .help(LocalizationManager.shared.tr(.deleteClip))
 
                 // Compact Pin / Unpin Button (on the right - maintains position with static pin)
-                Button(action: { onTogglePin?(item) }) {
+                Button(action: {
+                    ThumbnailHoverPreviewPanel.shared.hide()
+                    onTogglePin?(item)
+                }) {
                     Image(systemName: item.isPinned ? "pin.fill" : "pin")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(item.isPinned ? .accentColor : .secondary)
@@ -256,6 +298,7 @@ public struct ClipRowView: View {
                         .frame(width: 18, height: 18)
                         .contentShape(Rectangle())
                         .onTapGesture {
+                            ThumbnailHoverPreviewPanel.shared.hide()
                             onTogglePin?(item)
                         }
                 }

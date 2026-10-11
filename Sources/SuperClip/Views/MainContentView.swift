@@ -108,6 +108,7 @@ public struct MainContentView: View {
                 installKeyboardMonitor()
             }
             .onDisappear {
+                ThumbnailHoverPreviewPanel.shared.hide()
                 removeKeyboardMonitor()
             }
             .onChange(of: selectedIndex) { newIndex in
@@ -212,6 +213,7 @@ public struct MainContentView: View {
     // MARK: - Actions & Keyboard Interception
 
     public func selectItem(_ item: ClipItem) {
+        ThumbnailHoverPreviewPanel.shared.hide()
         _ = pasteboardWriter.writeClip(item, storageManager: storageManager)
         onItemSelected?(item)
         onDismiss?()

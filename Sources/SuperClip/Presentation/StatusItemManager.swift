@@ -362,6 +362,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         }
 
         removeEscapeMonitor()
+        ThumbnailHoverPreviewPanel.shared.hide()
         guard popover.isShown else { return }
         let wasAnimated = popover.animates
         popover.animates = false

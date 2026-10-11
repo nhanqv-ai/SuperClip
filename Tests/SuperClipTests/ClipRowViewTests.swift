@@ -113,5 +113,56 @@ public struct ClipRowViewTests {
         TestHarness.assertEqual(pinnedItem?.id, singleLineText.id, "onTogglePin invoked with target item")
         TestHarness.assertEqual(copiedItem?.id, singleLineText.id, "onCopy invoked with target item")
         TestHarness.assertEqual(deletedItem?.id, singleLineText.id, "onDelete invoked with target item")
+
+        // 10. CopyClip-style Tooltip for Truncated / Long Text & Multiline
+        let shortTextItem = ClipItem(id: UUID(), contentType: .text, textContent: "Short text")
+        TestHarness.assertEqual(ClipRowView.textTooltip(for: shortTextItem), "", "Short text (< 28 chars) has empty tooltip")
+
+        let longTextItem = ClipItem(
+            id: UUID(),
+            contentType: .text,
+            textContent: "SuperClip_Verified_Copy_F95CC7A0-5B07-41B0-831C-A8A5A4F26931"
+        )
+        TestHarness.assertEqual(
+            ClipRowView.textTooltip(for: longTextItem),
+            "SuperClip_Verified_Copy_F95CC7A0-5B07-41B0-831C-A8A5A4F26931",
+            "Long text displays full content in tooltip"
+        )
+
+        let multilineItem = ClipItem(id: UUID(), contentType: .text, textContent: "Line 1\nLine 2")
+        TestHarness.assertEqual(
+            ClipRowView.textTooltip(for: multilineItem),
+            "Line 1\nLine 2",
+            "Multiline text retains newlines in tooltip"
+        )
+
+        let whitespaceItem = ClipItem(id: UUID(), contentType: .text, textContent: "   \n\t  ")
+        TestHarness.assertEqual(ClipRowView.textTooltip(for: whitespaceItem), "", "Whitespace text has empty tooltip")
+
+        TestHarness.assertEqual(
+            ClipRowView.textTooltip(for: imageWithDims),
+            "",
+            "Image clip returns empty text tooltip (handled by thumbnail preview panel)"
+        )
+
+        let hugeString = String(repeating: "A", count: 2500)
+        let hugeItem = ClipItem(id: UUID(), contentType: .text, textContent: hugeString)
+        let hugeTooltip = ClipRowView.textTooltip(for: hugeItem)
+        TestHarness.assertEqual(hugeTooltip.count, 2003, "Huge string tooltip is capped at 2000 chars + ellipsis")
+        TestHarness.assertTrue(hugeTooltip.hasSuffix("..."), "Huge string tooltip has ellipsis suffix")
+
+        // 11. ThumbnailHoverPreviewPanel Lifecycle
+        let previewPanel = ThumbnailHoverPreviewPanel.shared
+        TestHarness.assertNotNil(previewPanel, "ThumbnailHoverPreviewPanel singleton is initialized")
+        TestHarness.assertEqual(previewPanel.level, .popUpMenu, "ThumbnailHoverPreviewPanel level is popUpMenu")
+
+        previewPanel.display(item: imageWithDims, thumbnailURL: nil)
+        TestHarness.assertEqual(previewPanel.currentItemId, imageWithDims.id, "display sets currentItemId for image clip")
+
+        previewPanel.show(for: shortTextItem, thumbnailURL: nil)
+        TestHarness.assertNil(previewPanel.currentItemId, "show with text item resets currentItemId")
+
+        previewPanel.hide()
+        TestHarness.assertNil(previewPanel.currentItemId, "hide clears currentItemId")
     }
 }

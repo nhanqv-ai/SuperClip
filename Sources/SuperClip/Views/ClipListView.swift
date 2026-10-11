@@ -244,7 +244,10 @@ public struct ClipListView: View {
             Spacer()
 
             if onClearHistory != nil {
-                Button(action: { onClearHistory?() }) {
+                Button(action: {
+                    ThumbnailHoverPreviewPanel.shared.hide()
+                    onClearHistory?()
+                }) {
                     HStack(spacing: 3) {
                         Image(systemName: "trash")
                             .font(.system(size: 9))

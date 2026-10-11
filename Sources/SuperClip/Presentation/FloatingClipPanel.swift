@@ -187,6 +187,7 @@ public final class FloatingClipPanel: NSPanel, FloatingPanelPresenting {
         guard !isDismissing, isVisible else { return }
         isDismissing = true
         removeEventMonitors()
+        ThumbnailHoverPreviewPanel.shared.hide()
         self.orderOut(nil)
         isDismissing = false
         onDismiss?()
