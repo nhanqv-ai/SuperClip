@@ -130,6 +130,7 @@ public enum L10nKey: Sendable {
     case recordClipboardHistory
     case languageLabel
     case shortcutLabel
+    case shortcutHelperText
     case recordButton
     case cancelButton
     case pressShortcutHint
@@ -554,14 +555,26 @@ public enum L10nKey: Sendable {
 
         case .shortcutLabel:
             switch lang {
-            case .vietnamese: return "Phím tắt:"
-            case .simplifiedChinese: return "快捷键:"
-            case .japanese: return "ショートカット:"
-            case .korean: return "단축키:"
-            case .spanish: return "Atajo:"
-            case .french: return "Raccourci :"
-            case .german: return "Kurzbefehl:"
-            default: return "Shortcut:"
+            case .vietnamese: return "Mở bảng clipboard:"
+            case .simplifiedChinese: return "呼出剪贴板:"
+            case .japanese: return "クリップボード表示:"
+            case .korean: return "클립보드 열기:"
+            case .spanish: return "Abrir portapapeles:"
+            case .french: return "Ouvrir le presse-papiers :"
+            case .german: return "Zwischenablage öffnen:"
+            default: return "Open clipboard:"
+            }
+
+        case .shortcutHelperText:
+            switch lang {
+            case .vietnamese: return "Bấm phím tắt này ở bất kỳ đâu để mở nhanh bảng clipboard ngay tại con trỏ chuột."
+            case .simplifiedChinese: return "在任意应用中按下此快捷键即可在鼠标光标处呼出剪贴板历史。"
+            case .japanese: return "任意の場所でこのキーを押すと、マウスカーソル位置に履歴を表示します。"
+            case .korean: return "어디서나 이 단축키를 눌러 마우스 커서 위치에 클립보드 기록을 엽니다."
+            case .spanish: return "Pulsa este atajo en cualquier lugar para abrir el portapapeles en el cursor."
+            case .french: return "Appuyez sur ce raccourci n'importe où pour ouvrir le presse-papiers sous le curseur."
+            case .german: return "Diesen Kurzbefehl überall drücken, um den Verlauf direkt am Mauszeiger zu öffnen."
+            default: return "Press this shortcut anywhere to open clipboard history at your mouse cursor."
             }
 
         case .recordButton:

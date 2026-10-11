@@ -27,6 +27,8 @@ public struct LocalizationTests {
         TestHarness.assertEqual(loc.tr(.pinnedSection), "ĐÃ GHIM", "Pinned section translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.clearHistory), "Xóa lịch sử", "Clear history translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.languageLabel), "Ngôn ngữ:", "Language label translated to Vietnamese")
+        TestHarness.assertEqual(loc.tr(.shortcutLabel), "Mở bảng clipboard:", "Shortcut label translated to Vietnamese")
+        TestHarness.assertTrue(loc.tr(.shortcutHelperText).contains("chuột"), "Shortcut helper translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.tabGeneral), "Cài đặt chung", "Tab General translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.authorLabel), "Tác giả", "Author label translated to Vietnamese")
         TestHarness.assertEqual(loc.tr(.licenseLabel), "Giấy phép", "License label translated to Vietnamese")
@@ -52,6 +54,8 @@ public struct LocalizationTests {
         TestHarness.assertEqual(loc.tr(.searchPlaceholder), "Search clips...", "Search placeholder translated to English")
         TestHarness.assertEqual(loc.tr(.pinnedSection), "PINNED", "Pinned section translated to English")
         TestHarness.assertEqual(loc.tr(.languageLabel), "Language:", "Language label translated to English")
+        TestHarness.assertEqual(loc.tr(.shortcutLabel), "Open clipboard:", "Shortcut label translated to English")
+        TestHarness.assertTrue(loc.tr(.shortcutHelperText).contains("cursor"), "Shortcut helper translated to English")
         TestHarness.assertEqual(loc.tr(.authorLabel), "Author", "Author label translated to English")
         TestHarness.assertEqual(loc.tr(.licenseLabel), "License", "License label translated to English")
 

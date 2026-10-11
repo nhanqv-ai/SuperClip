@@ -191,7 +191,7 @@ public struct SettingsView: View {
             Divider()
             footerBar
         }
-        .frame(width: 460, height: 420)
+        .frame(width: 460, height: 440)
         .background(Color(nsColor: .windowBackgroundColor))
         .onDisappear {
             stopRecordingHotKey()
@@ -405,7 +405,6 @@ public struct SettingsView: View {
                 HStack(spacing: 8) {
                     Text(LocalizationManager.shared.tr(.shortcutLabel))
                         .font(.system(size: 12))
-                        .frame(width: 80, alignment: .leading)
 
                     Text(KeyCombinationHelper.formattedShortcut(
                         keyCode: storageManager.settings.hotKeyKeyCode,
@@ -453,6 +452,11 @@ public struct SettingsView: View {
                     .menuStyle(.borderedButton)
                     .controlSize(.small)
                 }
+
+                Text(LocalizationManager.shared.tr(.shortcutHelperText))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 12) {
                     Toggle("Option", isOn: Binding(
