@@ -15,6 +15,8 @@ public struct AppSettingsTests {
         TestHarness.assertEqual(defaults.maxThumbnailPixelSize, 180, "Default maxThumbnailPixelSize is 180")
         TestHarness.assertFalse(defaults.launchAtLogin, "Default launchAtLogin is false")
         TestHarness.assertEqual(defaults.language, "system", "Default language is system")
+        TestHarness.assertTrue(defaults.automaticallyCheckForUpdates, "Default automaticallyCheckForUpdates is true")
+        TestHarness.assertNil(defaults.lastUpdateCheckDate, "Default lastUpdateCheckDate is nil")
 
         // 2. Convenience aliases
         var settingsWithAliases = AppSettings()
@@ -55,7 +57,9 @@ public struct AppSettingsTests {
             hotKeyModifiers: 256 | 512,
             pollIntervalMs: 300,
             maxThumbnailPixelSize: 200,
-            launchAtLogin: true
+            launchAtLogin: true,
+            automaticallyCheckForUpdates: false,
+            lastUpdateCheckDate: Date(timeIntervalSince1970: 1700000000)
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -78,6 +82,9 @@ public struct AppSettingsTests {
         mutated.hotKeyKeyCode = 49 // Space
         mutated.hotKeyModifiers = 2048 // Option
         mutated.capacity = 300
+        mutated.automaticallyCheckForUpdates = false
+        let checkDate = Date(timeIntervalSince1970: 1700000000)
+        mutated.lastUpdateCheckDate = checkDate
         storage.settings = mutated
         storage.flushDiskQueue()
 
@@ -87,5 +94,7 @@ public struct AppSettingsTests {
         TestHarness.assertEqual(reloadedStorage.settings.capacity, 300, "Persisted capacity reloaded correctly from disk")
         TestHarness.assertEqual(reloadedStorage.settings.hotKeyKeyCode, 49, "Persisted hotkey keyCode reloaded correctly")
         TestHarness.assertEqual(reloadedStorage.settings.hotKeyModifiers, 2048, "Persisted hotkey modifiers reloaded correctly")
+        TestHarness.assertFalse(reloadedStorage.settings.automaticallyCheckForUpdates, "Persisted automaticallyCheckForUpdates reloaded correctly")
+        TestHarness.assertNotNil(reloadedStorage.settings.lastUpdateCheckDate, "Persisted lastUpdateCheckDate reloaded correctly")
     }
 }

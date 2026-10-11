@@ -19,6 +19,7 @@ public struct MainContentView: View {
     // MARK: - Dependencies & Callbacks
 
     @ObservedObject public var storageManager: StorageManager
+    @ObservedObject public var updateManager: UpdateManager
     @ObservedObject private var localizationManager = LocalizationManager.shared
     public var pasteboardWriter: any PasteboardWriting
     public var pasteboardMonitor: (any PasteboardMonitoring)?
@@ -38,6 +39,7 @@ public struct MainContentView: View {
         storageManager: StorageManager,
         pasteboardWriter: (any PasteboardWriting)? = nil,
         pasteboardMonitor: (any PasteboardMonitoring)? = nil,
+        updateManager: UpdateManager = UpdateManager.shared,
         onDismiss: (() -> Void)? = nil,
         onItemSelected: ((ClipItem) -> Void)? = nil,
         onOpenSettings: (() -> Void)? = nil
@@ -46,6 +48,7 @@ public struct MainContentView: View {
         let monitor = pasteboardMonitor ?? PasteboardMonitor.shared
         self.pasteboardMonitor = monitor
         self.pasteboardWriter = pasteboardWriter ?? PasteboardWriter(pasteboard: .general, monitor: monitor)
+        self.updateManager = updateManager
         self.onDismiss = onDismiss
         self.onItemSelected = onItemSelected
         self.onOpenSettings = onOpenSettings
@@ -90,6 +93,9 @@ public struct MainContentView: View {
             VStack(spacing: 0) {
                 headerBar
                 searchBarSection
+                if updateManager.shouldShowBanner {
+                    updateBannerView
+                }
                 Divider()
                     .opacity(0.6)
                 contentSection
@@ -143,11 +149,20 @@ public struct MainContentView: View {
                     SettingsWindowController.shared?.showSettings()
                 }
             }) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
-                    .padding(4)
-                    .contentShape(Rectangle())
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .padding(4)
+
+                    if updateManager.hasPendingUpdate {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 6, height: 6)
+                            .offset(x: 2, y: -2)
+                    }
+                }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .help(LocalizationManager.shared.tr(.preferencesTooltip))
@@ -177,6 +192,142 @@ public struct MainContentView: View {
                 handleReturnKey()
             }
         )
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
+    }
+
+    // MARK: - Update Banner View
+
+    public var updateBannerView: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                .foregroundColor(.accentColor)
+                .font(.system(size: 13))
+
+            VStack(alignment: .leading, spacing: 1) {
+                switch updateManager.status {
+                case .readyToRestart:
+                    Text(LocalizationManager.shared.tr(.updateReadyRestart))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primary)
+
+                case .downloading:
+                    Text(LocalizationManager.shared.tr(.downloadingUpdate))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primary)
+
+                case .updateAvailable(let release):
+                    let tag = release.tagName.lowercased().hasPrefix("v") ? release.tagName : "v\(release.tagName)"
+                    Text(LocalizationManager.shared.tr(.updateAvailableBanner(tag)))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primary)
+
+                case .error(let msg):
+                    Text(msg)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.red)
+                        .lineLimit(1)
+
+                default:
+                    EmptyView()
+                }
+            }
+
+            Spacer()
+
+            switch updateManager.status {
+            case .readyToRestart:
+                Button(action: {
+                    updateManager.dismissBannerForSession()
+                }) {
+                    Text(LocalizationManager.shared.tr(.later))
+                        .font(.system(size: 10))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.secondary)
+
+                Button(action: {
+                    updateManager.restartApp()
+                }) {
+                    Text(LocalizationManager.shared.tr(.restart))
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+            case .downloading:
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.6)
+
+            case .updateAvailable(let release):
+                Button(action: {
+                    NSWorkspace.shared.open(release.htmlURL)
+                }) {
+                    Text(LocalizationManager.shared.tr(.releaseNotes))
+                        .font(.system(size: 10))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.secondary)
+
+                Button(action: {
+                    updateManager.dismissBannerForSession()
+                }) {
+                    Text(LocalizationManager.shared.tr(.later))
+                        .font(.system(size: 10))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.secondary)
+
+                Button(action: {
+                    updateManager.startDownloadAndInstall(release: release)
+                }) {
+                    Text(LocalizationManager.shared.tr(.updateNow))
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+            case .error:
+                if let release = updateManager.latestRelease {
+                    Button(action: {
+                        NSWorkspace.shared.open(release.htmlURL)
+                    }) {
+                        Text(LocalizationManager.shared.tr(.releaseNotes))
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
+                }
+
+                Button(action: {
+                    updateManager.dismissBannerForSession()
+                }) {
+                    Text(LocalizationManager.shared.tr(.later))
+                        .font(.system(size: 10))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.secondary)
+
+                if let release = updateManager.latestRelease {
+                    Button(action: {
+                        updateManager.startDownloadAndInstall(release: release)
+                    }) {
+                        Text(LocalizationManager.shared.tr(.updateNow))
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+
+            default:
+                EmptyView()
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.accentColor.opacity(0.12))
+        .cornerRadius(6)
         .padding(.horizontal, 12)
         .padding(.bottom, 6)
     }

@@ -89,6 +89,9 @@ struct VerificationRunner {
         // 21. Ignored Apps & Launch at Login Tests
         IgnoredAppsTests.run(sandboxDir: sandboxURL.appendingPathComponent("IgnoredAppsTest"))
 
+        // 22. Auto-Updater & GitHub Release Tests
+        UpdateManagerTests.run(sandboxDir: sandboxURL.appendingPathComponent("UpdateTest"))
+
         let elapsed = Date().timeIntervalSince(startTimestamp)
         print("\nVerification completed in \(String(format: "%.3f", elapsed)) seconds.")
         

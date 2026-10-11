@@ -93,6 +93,26 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemManager.onClearHistoryRequested = { [weak self] in
             self?.storageManager.clearUnpinnedHistory()
         }
+
+        statusItemManager.onCheckForUpdatesRequested = { [weak self] in
+            UpdateManager.shared.checkForUpdates(userInitiated: true) { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let release):
+                        if release != nil {
+                            self?.statusItemManager.showPopover()
+                        }
+                    case .failure:
+                        break
+                    }
+                }
+            }
+        }
+
+        // Configure update manager and schedule background update checking
+        UpdateManager.shared.storageManager = storageManager
+        UpdateManager.shared.checkOnStartupIfNeeded(storageManager: storageManager)
+        UpdateManager.shared.startPeriodicCheck(interval: 86400, storageManager: storageManager)
     }
 
     public func openSettings() {
@@ -117,7 +137,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         // 3. Dismantle presentation monitors and windows
         statusItemManager?.dismissAll()
 
-        // 4. Synchronously flush disk queue to guarantee persistence of metadata, settings, and blobs
+        // 4. Invalidate periodic update timer
+        UpdateManager.shared.stopPeriodicCheck()
+
+        // 5. Synchronously flush disk queue to guarantee persistence of metadata, settings, and blobs
         storageManager?.flushDiskQueue()
     }
 }

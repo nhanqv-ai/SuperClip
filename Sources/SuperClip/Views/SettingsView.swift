@@ -110,6 +110,7 @@ public struct KeyCombinationHelper {
 /// - Strict 0-emoji invariant across all UI strings and icons
 public struct SettingsView: View {
     @ObservedObject public var storageManager: StorageManager
+    @ObservedObject public var updateManager: UpdateManager
     @ObservedObject private var localizationManager = LocalizationManager.shared
     public var hotKeyManager: HotKeyManaging
     public var launchAtLoginManager: any LaunchAtLoginManaging
@@ -174,12 +175,14 @@ public struct SettingsView: View {
         storageManager: StorageManager,
         hotKeyManager: HotKeyManaging = HotKeyManager.shared,
         launchAtLoginManager: any LaunchAtLoginManaging = LaunchAtLoginManager.shared,
+        updateManager: UpdateManager = UpdateManager.shared,
         onClose: (() -> Void)? = nil,
         onDismiss: (() -> Void)? = nil
     ) {
         self.storageManager = storageManager
         self.hotKeyManager = hotKeyManager
         self.launchAtLoginManager = launchAtLoginManager
+        self.updateManager = updateManager
         self.onDismiss = onClose ?? onDismiss
     }
 
@@ -370,6 +373,17 @@ public struct SettingsView: View {
                     set: { newVal in
                         var s = storageManager.settings
                         s.recordClipboardHistory = newVal
+                        storageManager.settings = s
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .font(.system(size: 12))
+
+                Toggle(LocalizationManager.shared.tr(.automaticallyCheckForUpdates), isOn: Binding(
+                    get: { storageManager.settings.automaticallyCheckForUpdates },
+                    set: { newVal in
+                        var s = storageManager.settings
+                        s.automaticallyCheckForUpdates = newVal
                         storageManager.settings = s
                     }
                 ))
@@ -817,7 +831,7 @@ public struct SettingsView: View {
                 Text(LocalizationManager.shared.tr(.appTitle))
                     .font(.system(size: 16, weight: .bold))
 
-                Text(LocalizationManager.shared.tr(.versionLabel("1.0.0")))
+                Text(LocalizationManager.shared.tr(.versionLabel(updateManager.currentVersion)))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -865,6 +879,35 @@ public struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                Divider()
+                    .padding(.vertical, 2)
+
+                HStack {
+                    Button(action: {
+                        updateManager.checkForUpdates(userInitiated: true)
+                    }) {
+                        HStack(spacing: 4) {
+                            if case .checking = updateManager.status {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .scaleEffect(0.6)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 11))
+                            }
+                            Text(LocalizationManager.shared.tr(.checkForUpdates))
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(updateManager.isBusy)
+
+                    Spacer()
+
+                    updateStatusLabel
+                }
             }
             .padding(.horizontal, 14)
 
@@ -904,6 +947,54 @@ public struct SettingsView: View {
                         .stroke(Color(nsColor: .separatorColor).opacity(0.3), lineWidth: 1)
                 )
         )
+    }
+
+    private var updateStatusLabel: some View {
+        Group {
+            switch updateManager.status {
+            case .idle:
+                EmptyView()
+            case .checking:
+                Text(LocalizationManager.shared.tr(.checkingForUpdates))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            case .upToDate(let ver):
+                Text(LocalizationManager.shared.tr(.upToDate(ver)))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            case .updateAvailable(let release):
+                HStack(spacing: 6) {
+                    Text(LocalizationManager.shared.tr(.versionAvailable(release.versionString)))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.accentColor)
+                    Button(LocalizationManager.shared.tr(.updateNow)) {
+                        updateManager.startDownloadAndInstall(release: release)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
+                }
+            case .downloading:
+                Text(LocalizationManager.shared.tr(.downloadingUpdate))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            case .readyToRestart:
+                HStack(spacing: 6) {
+                    Text(LocalizationManager.shared.tr(.updateReadyRestart))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.accentColor)
+                    Button(LocalizationManager.shared.tr(.restart)) {
+                        updateManager.restartApp()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
+                }
+            case .error(let msg):
+                Text(msg)
+                    .font(.system(size: 11))
+                    .foregroundColor(.red)
+                    .lineLimit(1)
+            }
+        }
     }
 
     // MARK: - Footer Bar

@@ -166,6 +166,20 @@ public enum L10nKey: Sendable {
     case resetDefaultsButton
     case doneButton
 
+    // Auto-Update & Notifications
+    case automaticallyCheckForUpdates
+    case checkForUpdates
+    case updateAvailableBanner(String)
+    case updateNow
+    case later
+    case releaseNotes
+    case updateReadyRestart
+    case restart
+    case upToDate(String)
+    case checkingForUpdates
+    case downloadingUpdate
+    case versionAvailable(String)
+
     public func localized(for lang: AppLanguage) -> String {
         switch self {
         case .appTitle:
@@ -904,6 +918,150 @@ public enum L10nKey: Sendable {
             case .french: return "Terminé"
             case .german: return "Fertig"
             default: return "Done"
+            }
+
+        case .automaticallyCheckForUpdates:
+            switch lang {
+            case .vietnamese: return "Tự động kiểm tra bản cập nhật"
+            case .simplifiedChinese: return "自动检查更新"
+            case .japanese: return "アップデートを自動的に確認"
+            case .korean: return "자동으로 업데이트 확인"
+            case .spanish: return "Buscar actualizaciones automáticamente"
+            case .french: return "Rechercher automatiquement les mises à jour"
+            case .german: return "Automatisch nach Updates suchen"
+            default: return "Automatically check for updates"
+            }
+
+        case .checkForUpdates:
+            switch lang {
+            case .vietnamese: return "Kiểm tra bản cập nhật..."
+            case .simplifiedChinese: return "检查更新..."
+            case .japanese: return "アップデートを確認..."
+            case .korean: return "업데이트 확인..."
+            case .spanish: return "Buscar actualizaciones..."
+            case .french: return "Vérifier les mises à jour..."
+            case .german: return "Nach Updates suchen..."
+            default: return "Check for Updates..."
+            }
+
+        case .updateAvailableBanner(let ver):
+            switch lang {
+            case .vietnamese: return "Đã có SuperClip \(ver)"
+            case .simplifiedChinese: return "SuperClip \(ver) 现已可用"
+            case .japanese: return "SuperClip \(ver) が利用可能です"
+            case .korean: return "SuperClip \(ver) 사용 가능"
+            case .spanish: return "SuperClip \(ver) está disponible"
+            case .french: return "SuperClip \(ver) est disponible"
+            case .german: return "SuperClip \(ver) ist verfügbar"
+            default: return "SuperClip \(ver) is available"
+            }
+
+        case .updateNow:
+            switch lang {
+            case .vietnamese: return "Cập nhật ngay"
+            case .simplifiedChinese: return "立即更新"
+            case .japanese: return "今すぐアップデート"
+            case .korean: return "지금 업데이트"
+            case .spanish: return "Actualizar ahora"
+            case .french: return "Mettre à jour maintenant"
+            case .german: return "Jetzt aktualisieren"
+            default: return "Update Now"
+            }
+
+        case .later:
+            switch lang {
+            case .vietnamese: return "Để sau"
+            case .simplifiedChinese: return "稍后"
+            case .japanese: return "後で"
+            case .korean: return "나중에"
+            case .spanish: return "Más tarde"
+            case .french: return "Plus tard"
+            case .german: return "Später"
+            default: return "Later"
+            }
+
+        case .releaseNotes:
+            switch lang {
+            case .vietnamese: return "Chi tiết phát hành"
+            case .simplifiedChinese: return "发行说明"
+            case .japanese: return "リリースノート"
+            case .korean: return "릴리스 노트"
+            case .spanish: return "Notas de versión"
+            case .french: return "Notes de version"
+            case .german: return "Versionshinweise"
+            default: return "Release Notes"
+            }
+
+        case .updateReadyRestart:
+            switch lang {
+            case .vietnamese: return "Bản cập nhật đã sẵn sàng, khởi động lại ngay"
+            case .simplifiedChinese: return "更新已就绪，立即重启"
+            case .japanese: return "アップデートの準備完了、今すぐ再起動"
+            case .korean: return "업데이트 준비 완료, 지금 재시작"
+            case .spanish: return "Actualización lista, reiniciar ahora"
+            case .french: return "Mise à jour prête, redémarrer maintenant"
+            case .german: return "Update bereit, jetzt neu starten"
+            default: return "Update ready, restart now"
+            }
+
+        case .restart:
+            switch lang {
+            case .vietnamese: return "Khởi động lại"
+            case .simplifiedChinese: return "重启"
+            case .japanese: return "再起動"
+            case .korean: return "재시작"
+            case .spanish: return "Reiniciar"
+            case .french: return "Redémarrer"
+            case .german: return "Neu starten"
+            default: return "Restart"
+            }
+
+        case .upToDate(let ver):
+            switch lang {
+            case .vietnamese: return "Bạn đang dùng bản mới nhất (\(ver))"
+            case .simplifiedChinese: return "已是最新版本 (\(ver))"
+            case .japanese: return "最新バージョンです (\(ver))"
+            case .korean: return "최신 버전입니다 (\(ver))"
+            case .spanish: return "Está actualizado (\(ver))"
+            case .french: return "À jour (\(ver))"
+            case .german: return "Auf neuestem Stand (\(ver))"
+            default: return "You're up to date (\(ver))"
+            }
+
+        case .checkingForUpdates:
+            switch lang {
+            case .vietnamese: return "Đang kiểm tra bản cập nhật..."
+            case .simplifiedChinese: return "正在检查更新..."
+            case .japanese: return "アップデートを確認中..."
+            case .korean: return "업데이트 확인 중..."
+            case .spanish: return "Buscando actualizaciones..."
+            case .french: return "Vérification des mises à jour..."
+            case .german: return "Suche nach Updates..."
+            default: return "Checking for updates..."
+            }
+
+        case .downloadingUpdate:
+            switch lang {
+            case .vietnamese: return "Đang tải bản cập nhật..."
+            case .simplifiedChinese: return "正在下载更新..."
+            case .japanese: return "アップデートをダウンロード中..."
+            case .korean: return "업데이트 다운로드 중..."
+            case .spanish: return "Descargando actualización..."
+            case .french: return "Téléchargement de la mise à jour..."
+            case .german: return "Update wird heruntergeladen..."
+            default: return "Downloading update..."
+            }
+
+        case .versionAvailable(let ver):
+            switch lang {
+            case .vietnamese: return "Có phiên bản \(ver)"
+            case .simplifiedChinese: return "版本 \(ver) 可用"
+            case .japanese: return "バージョン \(ver) が利用可能"
+            case .korean: return "버전 \(ver) 사용 가능"
+            case .spanish: return "Versión \(ver) disponible"
+            case .french: return "Version \(ver) disponible"
+            case .german: return "Version \(ver) verfügbar"
+            default: return "Version \(ver) available"
             }
         }
     }

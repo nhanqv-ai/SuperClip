@@ -11,6 +11,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var displayCapacity: Int
     public var language: String
     public var ignoredApps: [IgnoredApp]
+    public var automaticallyCheckForUpdates: Bool
+    public var lastUpdateCheckDate: Date?
 
     public static let defaultCapacity: Int = 100
     public static let defaultHotKeyKeyCode: UInt32 = 9 // kVK_ANSI_V
@@ -22,6 +24,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public static let defaultDisplayCapacity: Int = 20
     public static let defaultLanguage: String = "system"
     public static let defaultIgnoredApps: [IgnoredApp] = []
+    public static let defaultAutomaticallyCheckForUpdates: Bool = true
+    public static let defaultLastUpdateCheckDate: Date? = nil
 
     public var historyCapacity: Int {
         get { capacity }
@@ -48,7 +52,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         recordClipboardHistory: Bool = true,
         displayCapacity: Int = 20,
         language: String = AppSettings.defaultLanguage,
-        ignoredApps: [IgnoredApp] = []
+        ignoredApps: [IgnoredApp] = [],
+        automaticallyCheckForUpdates: Bool = AppSettings.defaultAutomaticallyCheckForUpdates,
+        lastUpdateCheckDate: Date? = AppSettings.defaultLastUpdateCheckDate
     ) {
         self.capacity = max(10, min(capacity, 1000))
         self.hotKeyKeyCode = hotKeyKeyCode
@@ -60,6 +66,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.displayCapacity = max(5, min(displayCapacity, 500))
         self.language = language
         self.ignoredApps = ignoredApps
+        self.automaticallyCheckForUpdates = automaticallyCheckForUpdates
+        self.lastUpdateCheckDate = lastUpdateCheckDate
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -73,6 +81,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case displayCapacity
         case language
         case ignoredApps
+        case automaticallyCheckForUpdates
+        case lastUpdateCheckDate
     }
 
     public init(from decoder: Decoder) throws {
@@ -91,6 +101,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.displayCapacity = max(5, min(disp, 500))
         self.language = try container.decodeIfPresent(String.self, forKey: .language) ?? AppSettings.defaultLanguage
         self.ignoredApps = try container.decodeIfPresent([IgnoredApp].self, forKey: .ignoredApps) ?? []
+        self.automaticallyCheckForUpdates = try container.decodeIfPresent(Bool.self, forKey: .automaticallyCheckForUpdates) ?? true
+        self.lastUpdateCheckDate = try container.decodeIfPresent(Date.self, forKey: .lastUpdateCheckDate)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -105,5 +117,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try container.encode(displayCapacity, forKey: .displayCapacity)
         try container.encode(language, forKey: .language)
         try container.encode(ignoredApps, forKey: .ignoredApps)
+        try container.encode(automaticallyCheckForUpdates, forKey: .automaticallyCheckForUpdates)
+        try container.encodeIfPresent(lastUpdateCheckDate, forKey: .lastUpdateCheckDate)
     }
 }

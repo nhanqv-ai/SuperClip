@@ -35,6 +35,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
     /// Action callbacks for testing and custom event interception
     public var onOpenSettingsRequested: (() -> Void)?
     public var onClearHistoryRequested: (() -> Void)?
+    public var onCheckForUpdatesRequested: (() -> Void)?
     public var onDismissRequested: (() -> Void)?
     public var onPopoverVisibilityChanged: ((Bool) -> Void)?
 
@@ -192,8 +193,12 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         updateToolTip(keyCode: sm.settings.hotKeyKeyCode, modifiers: sm.settings.hotKeyModifiers)
         settingsObserver = sm.objectWillChange.sink { [weak self, weak sm] _ in
             guard let self = self, let sm = sm else { return }
-            DispatchQueue.main.async {
+            if Thread.isMainThread {
                 self.updateToolTip(keyCode: sm.settings.hotKeyKeyCode, modifiers: sm.settings.hotKeyModifiers)
+            } else {
+                DispatchQueue.main.async {
+                    self.updateToolTip(keyCode: sm.settings.hotKeyKeyCode, modifiers: sm.settings.hotKeyModifiers)
+                }
             }
         }
     }
@@ -243,11 +248,35 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         floatingPanel?.dismiss()
         closePopover()
 
+        addCheckForUpdatesMenuItem()
+
         guard let button = statusItem.button else { return }
 
         // Temporarily set menu to invoke native status item popup tracking
         statusItem.menu = contextMenu
         button.performClick(nil)
+    }
+
+    /// Dynamically injects the 'Check for Updates...' menu item into contextMenu
+    public func addCheckForUpdatesMenuItem() {
+        guard !contextMenu.items.contains(where: { $0.action == #selector(checkUpdatesMenuItemClicked(_:)) }) else {
+            return
+        }
+
+        let updateItem = NSMenuItem(
+            title: "Check for Updates...",
+            action: #selector(checkUpdatesMenuItemClicked(_:)),
+            keyEquivalent: ""
+        )
+        updateItem.target = self
+        updateItem.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
+
+        // Insert before the last separator and Quit SuperClip
+        if let quitIndex = contextMenu.items.firstIndex(where: { $0.action == #selector(quitMenuItemClicked(_:)) }) {
+            contextMenu.insertItem(updateItem, at: quitIndex)
+        } else {
+            contextMenu.addItem(updateItem)
+        }
     }
 
     // MARK: - NSMenuDelegate
@@ -278,6 +307,10 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         clearHistoryMenuItemClicked(sender)
     }
 
+    @objc public func handleCheckUpdatesMenuItem(_ sender: Any?) {
+        checkUpdatesMenuItemClicked(sender)
+    }
+
     @objc public func handleQuitMenuItem(_ sender: Any?) {
         quitMenuItemClicked(sender)
     }
@@ -298,6 +331,17 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
             controller.showSettings()
         } else if let sharedController = SettingsWindowController.shared {
             sharedController.showSettings()
+        }
+    }
+
+    @objc public func checkUpdatesMenuItemClicked(_ sender: Any?) {
+        closePopover()
+        floatingPanel?.dismiss()
+
+        if let onCheck = onCheckForUpdatesRequested {
+            onCheck()
+        } else {
+            UpdateManager.shared.checkForUpdates(userInitiated: true)
         }
     }
 
