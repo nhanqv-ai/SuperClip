@@ -219,22 +219,7 @@ public struct ClipRowView: View {
     private var trailingControls: some View {
         HStack(spacing: 5) {
             if isHovered {
-                // Compact Pin / Unpin Button
-                Button(action: { onTogglePin?(item) }) {
-                    Image(systemName: item.isPinned ? "pin.fill" : "pin")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(item.isPinned ? .accentColor : .secondary)
-                        .frame(width: 18, height: 18)
-                        .background(
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(Color.secondary.opacity(0.12))
-                        )
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip))
-
-                // Compact Delete Button
+                // Compact Delete Button (on the left)
                 Button(action: { onDelete?(item) }) {
                     Image(systemName: "trash")
                         .font(.system(size: 11, weight: .medium))
@@ -248,14 +233,30 @@ public struct ClipRowView: View {
                 }
                 .buttonStyle(.plain)
                 .help(LocalizationManager.shared.tr(.deleteClip))
+
+                // Compact Pin / Unpin Button (on the right - maintains position with static pin)
+                Button(action: { onTogglePin?(item) }) {
+                    Image(systemName: item.isPinned ? "pin.fill" : "pin")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(item.isPinned ? .accentColor : .secondary)
+                        .frame(width: 18, height: 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(Color.secondary.opacity(0.12))
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(item.isPinned ? LocalizationManager.shared.tr(.unpinClip) : LocalizationManager.shared.tr(.pinClip))
             } else {
                 if item.isPinned {
                     Image(systemName: "pin.fill")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.accentColor)
+                        .frame(width: 18, height: 18)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            onSelect?(item)
+                            onTogglePin?(item)
                         }
                 }
             }
