@@ -258,16 +258,6 @@ public struct ClipRowView: View {
                             onSelect?(item)
                         }
                 }
-                if let idx = shortcutIndex {
-                    Text("\(idx)")
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.secondary.opacity(0.8))
-                        .frame(width: 14, height: 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(Color.secondary.opacity(0.12))
-                        )
-                }
             }
         }
     }
