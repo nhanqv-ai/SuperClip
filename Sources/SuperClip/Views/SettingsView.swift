@@ -100,7 +100,7 @@ public struct KeyCombinationHelper {
 }
 
 /// SettingsView provides configuration for SuperClip preferences matching
-/// the native macOS CopyClip preferences design:
+/// native macOS preferences design:
 /// - Top icon-above-label tabs: General, Ignored Apps, Clips Management, About
 /// - Rounded card containers (RoundedRectangle(cornerRadius: 10))
 /// - Clippings card: Remember [ X ] clippings, Display [ Y ] clippings
@@ -229,7 +229,7 @@ public struct SettingsView: View {
         }
     }
 
-    // MARK: - General Tab Content (CopyClip Cards)
+    // MARK: - General Tab Content
 
     private var generalTabContent: some View {
         VStack(spacing: 14) {

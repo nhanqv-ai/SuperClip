@@ -56,7 +56,7 @@ public struct ClipRowViewTests {
         ThumbnailImageCache.shared.removeImage(for: dummyURL)
         TestHarness.assertNil(ThumbnailImageCache.shared.image(for: dummyURL), "Cache returns nil after removal")
 
-        // 7. Minimalist Single-Line Content Formatting (CopyClip Style)
+        // 7. Minimalist Single-Line Content Formatting
         let singleLineText = ClipItem(id: UUID(), contentType: .text, textContent: "Hello World")
         TestHarness.assertEqual(ClipRowView.formatContentText(for: singleLineText), "Hello World", "Single line text formats as-is")
 

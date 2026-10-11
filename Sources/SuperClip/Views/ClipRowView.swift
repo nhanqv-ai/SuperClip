@@ -103,7 +103,7 @@ public struct ClipThumbnailView: View {
 
 /// ClipRowView presents an individual clipboard item (text or image) on a clean,
 /// ultra-compact single line with right-aligned shortcut indicators, hover actions,
-/// and right-click context menu matching CopyClip's minimalist aesthetic.
+/// and right-click context menu.
 public struct ClipRowView: View {
     public let item: ClipItem
     public let shortcutIndex: Int?

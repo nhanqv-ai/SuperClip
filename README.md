@@ -11,7 +11,7 @@
 
 ### Highlights
 
-- **Ultra-Compact Single-Line Design**: Inspired by macOS CopyClip, every clip is presented cleanly on a single line with tail truncation, fitting 15-20 clips without scrolling.
+- **Ultra-Compact Single-Line Design**: Every clip is presented cleanly on a single line with tail truncation, fitting 15-20 clips into view without scrolling.
 - **Dual Presentation**:
   - **Menu Bar Popover**: Click the status item in the menu bar to review recent clips.
   - **Global Floating Panel**: Press `Option + V` anywhere on macOS to summon a floating panel centered at your mouse cursor.
@@ -24,7 +24,7 @@
 - **Text & Image Clip Support**: Captures both plain text and copied images with dimensions (`[Image] 1920x1080` / `[Ảnh] 1920x1080`).
 - **Instant Search**: Real-time filtering across both pinned and recent items with diacritic-insensitive matching.
 - **Privacy-First & Zero Accessibility Permissions**: Uses standard macOS pasteboard monitoring; does not require Accessibility keystroke-logging permissions.
-- **Native Preferences Window**: CopyClip-style tabbed settings with General, Ignored Apps, Clips Management, and About tabs.
+- **Native Preferences Window**: Native macOS tabbed settings with General, Ignored Apps, Clips Management, and About tabs.
 - **Zero Emojis Invariant**: Flat, elegant typography and SF Symbols for a distraction-free professional interface.
 
 ### Keyboard Shortcuts
@@ -90,7 +90,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Tính năng nổi bật
 
-- **Giao diện một dòng siêu gọn gàng**: Lấy cảm hứng từ ứng dụng CopyClip kinh điển, mỗi dữ liệu sao chép hiển thị gọn gàng trên đúng một dòng với dấu chấm lửng (`...`), hiển thị được 15-20 mục mà không cần cuộn chuột.
+- **Giao diện một dòng siêu gọn gàng**: Mỗi dữ liệu sao chép hiển thị gọn gàng trên đúng một dòng với dấu chấm lửng (`...`), hiển thị được 15-20 mục trong tầm nhìn mà không cần cuộn chuột.
 - **Hai chế độ hiển thị linh hoạt**:
   - **Menu Bar Popover**: Nhấn vào icon trên thanh menu để xem danh sách clipboard.
   - **Cửa sổ nổi toàn cục (Floating Panel)**: Nhấn `Option + V` ở bất kỳ ứng dụng nào để mở cửa sổ chọn nhanh ngay tại vị trí con trỏ chuột.
