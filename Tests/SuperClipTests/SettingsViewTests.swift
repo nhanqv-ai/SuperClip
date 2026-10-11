@@ -170,5 +170,49 @@ public struct SettingsViewTests {
         TestHarness.assertNotNil(statusManager.statusItem.menu, "statusItem.menu is assigned during presentation")
         statusManager.menuDidClose(menu)
         TestHarness.assertNil(statusManager.statusItem.menu, "statusItem.menu restored to nil on menuDidClose")
+
+        // 8. Record Clipboard History Toggle Verification
+        var recordSettings = storage.settings
+        recordSettings.recordClipboardHistory = false
+        storage.settings = recordSettings
+
+        let suppressedItem = ClipItem(id: UUID(), contentType: .text, textContent: "Should not be recorded")
+        storage.addClip(item: suppressedItem, imageData: nil, thumbData: nil)
+        TestHarness.assertFalse(storage.items.contains { $0.id == suppressedItem.id }, "Clip is not recorded when recordClipboardHistory is false")
+
+        recordSettings.recordClipboardHistory = true
+        storage.settings = recordSettings
+
+        let allowedItem = ClipItem(id: UUID(), contentType: .text, textContent: "Should be recorded")
+        storage.addClip(item: allowedItem, imageData: nil, thumbData: nil)
+        TestHarness.assertTrue(storage.items.contains { $0.id == allowedItem.id }, "Clip is recorded when recordClipboardHistory is true")
+
+        // 9. Display Capacity Dynamic List Capping Verification
+        let dispStorageDir = sandboxDir.appendingPathComponent("DispCapTestRun")
+        let dispStorage = StorageManager(baseDirectory: dispStorageDir, initialCapacity: 100)
+        for i in 1...30 {
+            let item = ClipItem(id: UUID(), contentType: .text, textContent: "Disp History \(i)", isPinned: false)
+            dispStorage.addClip(item: item, imageData: nil, thumbData: nil)
+        }
+        TestHarness.assertEqual(dispStorage.items.count, 30, "30 total unpinned clips stored")
+
+        var dispSettings = dispStorage.settings
+        dispSettings.displayCapacity = 10
+        dispStorage.settings = dispSettings
+
+        let clipListView10 = ClipListView(storageManager: dispStorage)
+        TestHarness.assertEqual(clipListView10.recentItems.count, 10, "ClipListView displays exactly 10 recent items when displayCapacity is 10")
+
+        let mainView10 = MainContentView(storageManager: dispStorage)
+        TestHarness.assertEqual(mainView10.partitionedClips.recent.count, 10, "MainContentView caps recent clips to 10 when displayCapacity is 10")
+        TestHarness.assertEqual(mainView10.visibleCount, 10, "MainContentView visibleCount is 10")
+
+        dispSettings.displayCapacity = 25
+        dispStorage.settings = dispSettings
+
+        let clipListView25 = ClipListView(storageManager: dispStorage)
+        TestHarness.assertEqual(clipListView25.recentItems.count, 25, "ClipListView displays exactly 25 recent items when displayCapacity is 25")
+        let mainView25 = MainContentView(storageManager: dispStorage)
+        TestHarness.assertEqual(mainView25.partitionedClips.recent.count, 25, "MainContentView caps recent clips to 25 when displayCapacity is 25")
     }
 }

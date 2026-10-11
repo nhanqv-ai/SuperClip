@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import SuperClipCore
+import SuperClip
 
 public struct ClipRowViewTests {
     public static func run(sandboxDir: URL) {
@@ -54,5 +55,24 @@ public struct ClipRowViewTests {
         TestHarness.assertNotNil(ThumbnailImageCache.shared.image(for: dummyURL), "Cache returns stored image")
         ThumbnailImageCache.shared.removeImage(for: dummyURL)
         TestHarness.assertNil(ThumbnailImageCache.shared.image(for: dummyURL), "Cache returns nil after removal")
+
+        // 7. Minimalist Single-Line Content Formatting (CopyClip Style)
+        let singleLineText = ClipItem(id: UUID(), contentType: .text, textContent: "Hello World")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: singleLineText), "Hello World", "Single line text formats as-is")
+
+        let multiLineText = ClipItem(id: UUID(), contentType: .text, textContent: "Line 1\r\nLine 2\nLine 3")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: multiLineText), "Line 1 Line 2 Line 3", "Multi-line text replaces newlines with single line spaces")
+
+        let whitespaceText = ClipItem(id: UUID(), contentType: .text, textContent: "  \n\t  ")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: whitespaceText), "(Whitespace)", "Whitespace-only text displays as (Whitespace)")
+
+        let emptyText = ClipItem(id: UUID(), contentType: .text, textContent: "")
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: emptyText), "(Empty)", "Empty text displays as (Empty)")
+
+        let imageWithDims = ClipItem(id: UUID(), contentType: .image, imageWidth: 1920, imageHeight: 1080)
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithDims), "[Ảnh] 1920x1080", "Image with dimensions displays [Ảnh] <width>x<height>")
+
+        let imageWithoutDims = ClipItem(id: UUID(), contentType: .image, imageWidth: nil, imageHeight: nil)
+        TestHarness.assertEqual(ClipRowView.formatContentText(for: imageWithoutDims), "[Ảnh]", "Image without dimensions displays [Ảnh]")
     }
 }

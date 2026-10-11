@@ -144,6 +144,8 @@ public final class StorageManager: ObservableObject, StorageManaging {
         lock.lock()
         defer { lock.unlock() }
 
+        guard _settings.recordClipboardHistory else { return }
+
         let resolvedImageName = item.imageFileName ?? (item.contentType == .image ? "\(item.id.uuidString).png" : nil)
         let resolvedThumbName = item.thumbnailFileName ?? (item.contentType == .image ? "\(item.id.uuidString)_thumb.png" : nil)
 

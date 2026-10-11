@@ -18,7 +18,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Register pasteboard polling callback
         pasteboardMonitor.onNewClip = { [weak self] item, rawData, thumbData in
-            self?.storageManager.addClip(item: item, imageData: rawData, thumbData: thumbData)
+            guard let self = self, self.storageManager.settings.recordClipboardHistory else { return }
+            self.storageManager.addClip(item: item, imageData: rawData, thumbData: thumbData)
         }
         pasteboardMonitor.startPolling(intervalMs: storageManager.settings.pollIntervalMs)
 

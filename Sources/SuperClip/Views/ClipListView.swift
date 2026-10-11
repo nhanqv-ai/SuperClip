@@ -91,8 +91,10 @@ public struct ClipListView: View {
         onCopy: ((ClipItem) -> Void)? = nil
     ) {
         let partitioned = SearchEngine.partition(items: storageManager.items, query: searchQuery)
+        let maxDisplay = storageManager.settings.displayCapacity
+        let cappedRecent = maxDisplay > 0 ? Array(partitioned.recent.prefix(maxDisplay)) : partitioned.recent
         self.pinnedItems = partitioned.pinned
-        self.recentItems = partitioned.recent
+        self.recentItems = cappedRecent
         self.searchQuery = searchQuery
         self.selectedItemId = selectedItemId
         self.thumbnailURLProvider = { item in storageManager.getThumbnailURL(for: item) }

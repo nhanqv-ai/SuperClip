@@ -145,7 +145,7 @@ public struct ClipRowView: View {
                     .foregroundColor(.primary)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -186,10 +186,14 @@ public struct ClipRowView: View {
 
     // MARK: - Row Content Text
 
-    private var rowContentText: String {
+    public static func formatContentText(for item: ClipItem) -> String {
         switch item.contentType {
         case .text:
             if let text = item.textContent, !text.isEmpty {
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty {
+                    return "(Whitespace)"
+                }
                 return text.replacingOccurrences(of: "\r\n", with: " ")
                            .replacingOccurrences(of: "\n", with: " ")
                            .replacingOccurrences(of: "\r", with: " ")
@@ -202,6 +206,10 @@ public struct ClipRowView: View {
                 return "[Ảnh]"
             }
         }
+    }
+
+    private var rowContentText: String {
+        Self.formatContentText(for: item)
     }
 
     // MARK: - Trailing Controls

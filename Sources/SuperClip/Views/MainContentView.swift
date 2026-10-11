@@ -53,7 +53,10 @@ public struct MainContentView: View {
     // MARK: - Computed Properties
 
     public var partitionedClips: (pinned: [ClipItem], recent: [ClipItem]) {
-        SearchEngine.partition(items: storageManager.items, query: searchText)
+        let (pinned, recent) = SearchEngine.partition(items: storageManager.items, query: searchText)
+        let maxDisplay = storageManager.settings.displayCapacity
+        let cappedRecent = maxDisplay > 0 ? Array(recent.prefix(maxDisplay)) : recent
+        return (pinned: pinned, recent: cappedRecent)
     }
 
     public var visibleItems: [ClipItem] {
@@ -169,7 +172,7 @@ public struct MainContentView: View {
 
     private var itemCountBadge: some View {
         Group {
-            if isSearching {
+            if isSearching || visibleCount < totalCount {
                 Text("\(visibleCount) of \(totalCount)")
             } else {
                 Text("\(totalCount)")
