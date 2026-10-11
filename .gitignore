@@ -15,6 +15,9 @@ DerivedData/
 *.xcworkspace
 *.xcuserstate
 
-# Output App Bundles
+# Output App Bundles and Binaries
 *.app/
 *.dSYM/
+*.zip
+.verifier_bin
+.adversarial_runner

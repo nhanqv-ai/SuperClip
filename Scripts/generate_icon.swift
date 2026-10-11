@@ -2,8 +2,9 @@ import AppKit
 import Foundation
 
 // MARK: - SuperClip App Icon Generator
-// Generates a multi-resolution macOS AppIcon (.icns) conforming to Apple flat design.
-// Zero emojis permitted. SF Symbols compliant.
+// Generates a vibrant, multi-resolution macOS AppIcon (.icns) conforming to macOS design standards.
+// Features a dynamic Sapphire Blue -> Neon Violet -> Cyan gradient, glassmorphic depth, and crisp clipboard geometry.
+// Strictly 0 emojis permitted. SF Symbols compliant.
 
 struct IconGenerator {
     let outputURL: URL
@@ -100,111 +101,236 @@ struct IconGenerator {
         NSColor.clear.setFill()
         fullRect.fill()
 
-        // macOS App Icon Squircle (standard ~82% dimension, ~22.4% corner radius)
+        // macOS App Icon Squircle geometry
+        // Margin: 8.2% of canvas, corner radius: ~22.4% of icon dimension
         let margin = CGFloat(pixelSize) * 0.082
         let iconRect = fullRect.insetBy(dx: margin, dy: margin)
         let cornerRadius = iconRect.width * 0.224
+
+        // 1. Ambient Drop Shadow underneath the Squircle
+        if pixelSize >= 32 {
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor(calibratedRed: 0.08, green: 0.12, blue: 0.35, alpha: 0.38)
+            shadow.shadowBlurRadius = CGFloat(pixelSize) * 0.06
+            shadow.shadowOffset = NSSize(width: 0, height: -CGFloat(pixelSize) * 0.025)
+            shadow.set()
+
+            let shadowPath = NSBezierPath(roundedRect: iconRect, xRadius: cornerRadius, yRadius: cornerRadius)
+            NSColor(calibratedRed: 0.1, green: 0.2, blue: 0.5, alpha: 0.2).setFill()
+            shadowPath.fill()
+
+            // Reset shadow
+            NSShadow().set()
+        }
+
+        // 2. Base Squircle Shape
         let baseClipPath = NSBezierPath(roundedRect: iconRect, xRadius: cornerRadius, yRadius: cornerRadius)
 
-        // Background Gradient: Modern Apple Blue (#1E70E8 -> #0C46B6)
-        let gradient = NSGradient(
+        NSGraphicsContext.saveGraphicsState()
+        baseClipPath.addClip()
+
+        // 3. Vibrant Modern macOS Gradient:
+        // Top-left: Vibrant Cyan / Sky Blue (#00D2FF)
+        // Mid-point: Royal Sapphire Blue (#2563EB)
+        // Bottom-right: Neon Violet / Deep Purple (#7C3AED -> #4C1D95)
+        let backgroundGradient = NSGradient(
             colors: [
-                NSColor(calibratedRed: 0.12, green: 0.44, blue: 0.91, alpha: 1.0),
-                NSColor(calibratedRed: 0.05, green: 0.27, blue: 0.71, alpha: 1.0)
+                NSColor(calibratedRed: 0.0, green: 0.82, blue: 1.0, alpha: 1.0),      // Cyan #00D2FF
+                NSColor(calibratedRed: 0.14, green: 0.38, blue: 0.94, alpha: 1.0),    // Royal Sapphire #2563EB
+                NSColor(calibratedRed: 0.45, green: 0.18, blue: 0.88, alpha: 1.0),    // Neon Violet #732EE0
+                NSColor(calibratedRed: 0.28, green: 0.10, blue: 0.58, alpha: 1.0)     // Deep Purple #471994
             ],
-            atLocations: [0.0, 1.0],
+            atLocations: [0.0, 0.40, 0.80, 1.0],
             colorSpace: .deviceRGB
         )
-        gradient?.draw(in: baseClipPath, angle: -90.0)
+        backgroundGradient?.draw(in: iconRect, angle: -45.0)
 
-        // Crisp Border Highlight
-        let highlightPath = NSBezierPath(
-            roundedRect: iconRect.insetBy(dx: 0.75, dy: 0.75),
-            xRadius: cornerRadius,
-            yRadius: cornerRadius
+        // 4. Subtle Top Radial Specular Sheen (Glassmorphism highlight)
+        let sheenCenter = NSPoint(x: iconRect.midX, y: iconRect.maxY)
+        let sheenGradient = NSGradient(
+            colors: [
+                NSColor(white: 1.0, alpha: 0.32),
+                NSColor(white: 1.0, alpha: 0.08),
+                NSColor(white: 1.0, alpha: 0.0)
+            ],
+            atLocations: [0.0, 0.45, 1.0],
+            colorSpace: .deviceRGB
         )
-        highlightPath.lineWidth = max(1.0, CGFloat(pixelSize) * 0.012)
-        NSColor(white: 1.0, alpha: 0.25).setStroke()
-        highlightPath.stroke()
+        sheenGradient?.draw(
+            fromCenter: sheenCenter,
+            radius: 0.0,
+            toCenter: sheenCenter,
+            radius: iconRect.width * 0.75,
+            options: []
+        )
 
-        // Center Symbol: doc.on.clipboard
-        var drawnSymbol = false
-        if let baseSymbol = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil) {
-            let symbolPointSize = iconRect.height * 0.54
-            let config = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .semibold)
-                .applying(NSImage.SymbolConfiguration(paletteColors: [
-                    NSColor.white,
-                    NSColor(white: 1.0, alpha: 0.85)
-                ]))
-            let symbol = baseSymbol.withSymbolConfiguration(config) ?? baseSymbol
-            let symbolSize = symbol.size
-            let targetRect = NSRect(
-                x: (size.width - symbolSize.width) / 2.0,
-                y: (size.height - symbolSize.height) / 2.0,
-                width: symbolSize.width,
-                height: symbolSize.height
-            )
-            symbol.draw(in: targetRect, from: .zero, operation: .sourceOver, fraction: 1.0)
-            drawnSymbol = true
-        }
+        NSGraphicsContext.restoreGraphicsState()
 
-        // Vector Fallback if system symbol is unavailable in headless runtime
-        if !drawnSymbol {
-            drawFallbackClipboard(in: iconRect, pixelSize: pixelSize)
-        }
+        // 5. Crisp Outer Glass Rim Highlight
+        let rimPath = NSBezierPath(
+            roundedRect: iconRect.insetBy(dx: 0.75, dy: 0.75),
+            xRadius: cornerRadius - 0.75,
+            yRadius: cornerRadius - 0.75
+        )
+        rimPath.lineWidth = max(1.0, CGFloat(pixelSize) * 0.012)
+        NSColor(white: 1.0, alpha: 0.35).setStroke()
+        rimPath.stroke()
+
+        // 6. Modern Elevated 3D Clipboard & Document Stack
+        drawModernClipboardGraphic(in: iconRect, pixelSize: pixelSize)
 
         NSGraphicsContext.restoreGraphicsState()
 
         return rep.representation(using: .png, properties: [:])
     }
 
-    private func drawFallbackClipboard(in rect: NSRect, pixelSize: Int) {
-        let boardWidth = rect.width * 0.58
-        let boardHeight = rect.height * 0.68
-        let boardRect = NSRect(
-            x: rect.midX - boardWidth / 2.0,
-            y: rect.midY - boardHeight / 2.0 - rect.height * 0.02,
-            width: boardWidth,
-            height: boardHeight
+    private func drawModernClipboardGraphic(in rect: NSRect, pixelSize: Int) {
+        let boardW = rect.width * 0.56
+        let boardH = rect.height * 0.68
+        let boardX = rect.midX - boardW / 2.0
+        let boardY = rect.midY - boardH / 2.0 - rect.height * 0.015
+
+        let boardRect = NSRect(x: boardX, y: boardY, width: boardW, height: boardH)
+        let boardRadius = boardW * 0.12
+
+        // A. Back Layer Card (Frosted Glass / Secondary Document with slight elevation)
+        let backCardW = boardW * 0.90
+        let backCardH = boardH * 0.90
+        let backCardRect = NSRect(
+            x: rect.midX - backCardW / 2.0 + rect.width * 0.02,
+            y: boardY + boardH * 0.04,
+            width: backCardW,
+            height: backCardH
         )
-        let boardCorner = boardWidth * 0.08
-        let boardPath = NSBezierPath(roundedRect: boardRect, xRadius: boardCorner, yRadius: boardCorner)
-        NSColor(white: 0.95, alpha: 0.95).setFill()
-        boardPath.fill()
+        let backCardPath = NSBezierPath(roundedRect: backCardRect, xRadius: boardRadius * 0.8, yRadius: boardRadius * 0.8)
 
-        // Paper sheet
-        let paperMargin = boardWidth * 0.08
-        let paperRect = boardRect.insetBy(dx: paperMargin, dy: paperMargin)
-        let paperPath = NSBezierPath(roundedRect: paperRect, xRadius: boardCorner * 0.5, yRadius: boardCorner * 0.5)
-        NSColor.white.setFill()
-        paperPath.fill()
+        if pixelSize >= 32 {
+            let backShadow = NSShadow()
+            backShadow.shadowColor = NSColor(calibratedRed: 0.05, green: 0.08, blue: 0.25, alpha: 0.30)
+            backShadow.shadowBlurRadius = CGFloat(pixelSize) * 0.03
+            backShadow.shadowOffset = NSSize(width: 0, height: -CGFloat(pixelSize) * 0.015)
+            backShadow.set()
+        }
+        NSColor(calibratedRed: 0.92, green: 0.95, blue: 1.0, alpha: 0.45).setFill()
+        backCardPath.fill()
+        NSShadow().set()
 
-        // Sheet content lines
-        let lineWidth = paperRect.width * 0.65
-        let lineHeight = max(1.0, CGFloat(pixelSize) * 0.015)
-        let lineSpacing = paperRect.height * 0.12
-        let lineStartX = paperRect.midX - lineWidth / 2.0
-        let firstLineY = paperRect.midY + paperRect.height * 0.1
+        // B. Main Clipboard Base Board (Deep Frosted Obsidian Glass)
+        let mainBoardPath = NSBezierPath(roundedRect: boardRect, xRadius: boardRadius, yRadius: boardRadius)
 
-        NSColor(white: 0.75, alpha: 1.0).setFill()
-        for i in 0..<3 {
-            let y = firstLineY - CGFloat(i) * lineSpacing
-            let lineRect = NSRect(x: lineStartX, y: y, width: lineWidth, height: lineHeight)
-            lineRect.fill()
+        if pixelSize >= 32 {
+            let boardShadow = NSShadow()
+            boardShadow.shadowColor = NSColor(calibratedRed: 0.03, green: 0.05, blue: 0.20, alpha: 0.40)
+            boardShadow.shadowBlurRadius = CGFloat(pixelSize) * 0.05
+            boardShadow.shadowOffset = NSSize(width: 0, height: -CGFloat(pixelSize) * 0.02)
+            boardShadow.set()
         }
 
-        // Top Clip
-        let clipWidth = boardWidth * 0.42
-        let clipHeight = boardHeight * 0.14
-        let clipRect = NSRect(
-            x: rect.midX - clipWidth / 2.0,
-            y: boardRect.maxY - clipHeight * 0.6,
-            width: clipWidth,
-            height: clipHeight
+        // Board gradient: Sleek dark glass with subtle blue tint
+        let boardGradient = NSGradient(
+            colors: [
+                NSColor(calibratedRed: 0.14, green: 0.18, blue: 0.32, alpha: 0.95),
+                NSColor(calibratedRed: 0.08, green: 0.10, blue: 0.22, alpha: 0.95)
+            ],
+            atLocations: [0.0, 1.0],
+            colorSpace: .deviceRGB
         )
-        let clipPath = NSBezierPath(roundedRect: clipRect, xRadius: clipHeight * 0.3, yRadius: clipHeight * 0.3)
-        NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.35, alpha: 1.0).setFill()
-        clipPath.fill()
+        boardGradient?.draw(in: mainBoardPath, angle: -90.0)
+        NSShadow().set()
+
+        // Board border rim
+        NSColor(white: 1.0, alpha: 0.20).setStroke()
+        mainBoardPath.lineWidth = max(1.0, CGFloat(pixelSize) * 0.008)
+        mainBoardPath.stroke()
+
+        // C. Elevated Paper Sheet (Crisp White Document)
+        let sheetMargin = boardW * 0.075
+        let sheetRect = NSRect(
+            x: boardX + sheetMargin,
+            y: boardY + sheetMargin * 0.7,
+            width: boardW - sheetMargin * 2.0,
+            height: boardH - sheetMargin * 1.8
+        )
+        let sheetRadius = boardRadius * 0.6
+        let sheetPath = NSBezierPath(roundedRect: sheetRect, xRadius: sheetRadius, yRadius: sheetRadius)
+
+        // Paper sheet gradient (Crisp pure white with subtle shadow)
+        let paperGradient = NSGradient(
+            colors: [
+                NSColor(white: 1.0, alpha: 1.0),
+                NSColor(calibratedRed: 0.96, green: 0.97, blue: 0.99, alpha: 1.0)
+            ],
+            atLocations: [0.0, 1.0],
+            colorSpace: .deviceRGB
+        )
+        paperGradient?.draw(in: sheetPath, angle: -90.0)
+
+        // D. Document Lines (Vibrant Content Simulation)
+        let lineW = sheetRect.width * 0.72
+        let lineH = max(1.5, CGFloat(pixelSize) * 0.018)
+        let lineSpacing = sheetRect.height * 0.125
+        let lineStartX = sheetRect.midX - lineW / 2.0
+        let firstLineY = sheetRect.midY + sheetRect.height * 0.12
+
+        // Line 1: Cyan / Blue Accent
+        let line1Rect = NSRect(x: lineStartX, y: firstLineY, width: lineW * 0.85, height: lineH)
+        let line1Path = NSBezierPath(roundedRect: line1Rect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
+        NSColor(calibratedRed: 0.0, green: 0.65, blue: 0.95, alpha: 0.90).setFill()
+        line1Path.fill()
+
+        // Line 2: Violet Accent
+        let line2Rect = NSRect(x: lineStartX, y: firstLineY - lineSpacing, width: lineW, height: lineH)
+        let line2Path = NSBezierPath(roundedRect: line2Rect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
+        NSColor(calibratedRed: 0.45, green: 0.30, blue: 0.85, alpha: 0.80).setFill()
+        line2Path.fill()
+
+        // Line 3: Lavender / Neutral
+        let line3Rect = NSRect(x: lineStartX, y: firstLineY - lineSpacing * 2.0, width: lineW * 0.60, height: lineH)
+        let line3Path = NSBezierPath(roundedRect: line3Rect, xRadius: lineH * 0.5, yRadius: lineH * 0.5)
+        NSColor(calibratedRed: 0.65, green: 0.68, blue: 0.80, alpha: 0.70).setFill()
+        line3Path.fill()
+
+        // E. Top Metallic Spring Clip (Polished Chrome / Titanium with Specular Highlight)
+        let clipW = boardW * 0.44
+        let clipH = boardH * 0.15
+        let clipRect = NSRect(
+            x: rect.midX - clipW / 2.0,
+            y: boardRect.maxY - clipH * 0.65,
+            width: clipW,
+            height: clipH
+        )
+        let clipRadius = clipH * 0.35
+        let clipPath = NSBezierPath(roundedRect: clipRect, xRadius: clipRadius, yRadius: clipRadius)
+
+        // Clip metallic gradient
+        let clipGradient = NSGradient(
+            colors: [
+                NSColor(calibratedRed: 0.95, green: 0.96, blue: 0.98, alpha: 1.0),
+                NSColor(calibratedRed: 0.72, green: 0.75, blue: 0.82, alpha: 1.0),
+                NSColor(calibratedRed: 0.48, green: 0.52, blue: 0.60, alpha: 1.0)
+            ],
+            atLocations: [0.0, 0.45, 1.0],
+            colorSpace: .deviceRGB
+        )
+        clipGradient?.draw(in: clipPath, angle: -90.0)
+
+        // Clip rim
+        NSColor(white: 1.0, alpha: 0.60).setStroke()
+        clipPath.lineWidth = max(0.8, CGFloat(pixelSize) * 0.007)
+        clipPath.stroke()
+
+        // Clip Center Fastener / Hole
+        let holeW = clipW * 0.28
+        let holeH = clipH * 0.35
+        let holeRect = NSRect(
+            x: rect.midX - holeW / 2.0,
+            y: clipRect.midY - holeH / 2.0,
+            width: holeW,
+            height: holeH
+        )
+        let holePath = NSBezierPath(roundedRect: holeRect, xRadius: holeH * 0.5, yRadius: holeH * 0.5)
+        NSColor(calibratedRed: 0.20, green: 0.22, blue: 0.30, alpha: 0.95).setFill()
+        holePath.fill()
     }
 }
 

@@ -145,7 +145,7 @@ if [ "$MAGIC_HEADER" != "icns" ]; then
     echo "ERROR: AppIcon.icns invalid magic header (expected 'icns', got '$MAGIC_HEADER')"
     exit 1
 fi
-if ! strings "$APP_ICON" | grep -E -q 'ic(04|05|07|08|09|10|11|12|13|14)'; then
+if ! strings "$APP_ICON" | grep -E 'ic(04|05|07|08|09|10|11|12|13|14)' > /dev/null; then
     echo "ERROR: AppIcon.icns missing standard multi-resolution bitmap chunk tags"
     exit 1
 fi
