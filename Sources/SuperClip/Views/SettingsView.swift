@@ -430,7 +430,7 @@ public struct SettingsView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 6) {
-                // Top Action Bar (shortcut label + badge + Spacer + Action buttons)
+                // Top Action Bar (shortcut label + badge + reset + Spacer + Action buttons)
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 6) {
                         Text(LocalizationManager.shared.tr(.shortcutLabel))
@@ -439,6 +439,18 @@ public struct SettingsView: View {
                             .fixedSize()
 
                         shortcutBadgeView
+
+                        if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
+                            Button(action: {
+                                applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
+                            }) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 10.5))
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Reset shortcut to default (Option + V)")
+                            .disabled(isRecordingHotKey)
+                        }
 
                         Spacer(minLength: 4)
 
@@ -455,6 +467,18 @@ public struct SettingsView: View {
                                 .fixedSize()
 
                             shortcutBadgeView
+
+                            if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
+                                Button(action: {
+                                    applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
+                                }) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 10.5))
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Reset shortcut to default (Option + V)")
+                                .disabled(isRecordingHotKey)
+                            }
 
                             Spacer()
                         }
@@ -498,62 +522,6 @@ public struct SettingsView: View {
                     .font(.system(size: 10.5))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-
-                // Modifiers Row
-                HStack(spacing: 12) {
-                    Toggle("Option (⌥)", isOn: Binding(
-                        get: { (storageManager.settings.hotKeyModifiers & UInt32(optionKey)) != 0 },
-                        set: { toggleModifier(flag: UInt32(optionKey), enable: $0) }
-                    ))
-                    Toggle("Command (⌘)", isOn: Binding(
-                        get: { (storageManager.settings.hotKeyModifiers & UInt32(cmdKey)) != 0 },
-                        set: { toggleModifier(flag: UInt32(cmdKey), enable: $0) }
-                    ))
-                    Toggle("Control (⌃)", isOn: Binding(
-                        get: { (storageManager.settings.hotKeyModifiers & UInt32(controlKey)) != 0 },
-                        set: { toggleModifier(flag: UInt32(controlKey), enable: $0) }
-                    ))
-                    Toggle("Shift (⇧)", isOn: Binding(
-                        get: { (storageManager.settings.hotKeyModifiers & UInt32(shiftKey)) != 0 },
-                        set: { toggleModifier(flag: UInt32(shiftKey), enable: $0) }
-                    ))
-                    Spacer()
-                }
-                .toggleStyle(.checkbox)
-                .font(.system(size: 11))
-                .disabled(isRecordingHotKey)
-
-                // Key Selection Row
-                HStack(spacing: 8) {
-                    Text(LocalizationManager.shared.tr(.keyLabel))
-                        .font(.system(size: 11.5))
-                        .frame(width: 80, alignment: .leading)
-
-                    Picker("", selection: Binding(
-                        get: { storageManager.settings.hotKeyKeyCode },
-                        set: { updateKeyCode($0) }
-                    )) {
-                        ForEach(KeyCombinationHelper.standardKeys) { item in
-                            Text(item.name).tag(item.code)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(width: 120)
-
-                    if storageManager.settings.hotKeyKeyCode != AppSettings.defaultHotKeyKeyCode || storageManager.settings.hotKeyModifiers != AppSettings.defaultHotKeyModifiers {
-                        Button(action: {
-                            applyHotKey(keyCode: AppSettings.defaultHotKeyKeyCode, modifiers: AppSettings.defaultHotKeyModifiers)
-                        }) {
-                            Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 10.5))
-                        }
-                        .buttonStyle(.borderless)
-                        .help("Reset shortcut to default (Option + V)")
-                    }
-
-                    Spacer()
-                }
-                .disabled(isRecordingHotKey)
             }
 
             if let warning = hotKeyWarningMessage {
