@@ -26,8 +26,8 @@ python3 "$PROJECT_ROOT/Scripts/lint_emojis.py" \
     "$PROJECT_ROOT/Sources" \
     "$PROJECT_ROOT/Tests" \
     "$PROJECT_ROOT/Scripts" \
-    "$PROJECT_ROOT/PROJECT.md" \
-    "$PROJECT_ROOT/TEST_INFRA.md"
+    "$PROJECT_ROOT/README.md" \
+    "$PROJECT_ROOT/LICENSE"
 
 # Step 2: Ensure Core Library Artifacts Exist
 echo ""

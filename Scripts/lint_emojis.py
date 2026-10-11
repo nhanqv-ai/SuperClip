@@ -48,7 +48,7 @@ def scan_file(filepath):
 def main():
     targets = sys.argv[1:]
     if not targets:
-        targets = ["Sources", "Tests", "Scripts", "Makefile", "Package.swift", "PROJECT.md", "TEST_INFRA.md"]
+        targets = ["Sources", "Tests", "Scripts", "Makefile", "Package.swift", "README.md", "LICENSE"]
 
     total_violations = 0
     scanned_files = 0

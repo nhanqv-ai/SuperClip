@@ -21,3 +21,9 @@ DerivedData/
 *.zip
 .verifier_bin
 .adversarial_runner
+Contents/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class

@@ -170,11 +170,7 @@ app: lint icon
 	@chmod 755 $(FRAMEWORKS_DIR)/libSuperClipCore.dylib
 	$(INSTALL_NAME_TOOL) -id @rpath/libSuperClipCore.dylib $(FRAMEWORKS_DIR)/libSuperClipCore.dylib
 	@echo "Installing bundle metadata and icon resources..."
-	@if [ -f Contents/Info.plist ]; then \
-		cp -f Contents/Info.plist $(BUNDLE_DIR)/Info.plist; \
-	elif [ -f Sources/SuperClip/App/Info.plist ]; then \
-		cp -f Sources/SuperClip/App/Info.plist $(BUNDLE_DIR)/Info.plist; \
-	fi
+	@cp -f Sources/SuperClip/App/Info.plist $(BUNDLE_DIR)/Info.plist
 	@chmod 644 $(BUNDLE_DIR)/Info.plist
 	@printf "APPL????" > $(BUNDLE_DIR)/PkgInfo
 	@chmod 644 $(BUNDLE_DIR)/PkgInfo
