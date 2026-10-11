@@ -235,16 +235,6 @@ public struct MainContentView: View {
 
     private var bottomMenuActions: some View {
         VStack(spacing: 1) {
-            menuActionRow(title: "Clear All History", shortcut: nil) {
-                storageManager.clearUnpinnedHistory()
-            }
-            menuActionRow(title: "Preferences...", shortcut: "⌘ ,") {
-                if let onOpen = onOpenSettings {
-                    onOpen()
-                } else {
-                    SettingsWindowController.shared?.showSettings()
-                }
-            }
             menuActionRow(title: "Quit", shortcut: "⌘ Q") {
                 NSApp.terminate(nil)
             }
