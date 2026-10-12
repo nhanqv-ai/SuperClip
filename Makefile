@@ -33,7 +33,7 @@ TARGET_ARM64 = arm64-apple-macos13.0
 TARGET_X86_64 = x86_64-apple-macos13.0
 HOST_ARCH = $(shell uname -m)
 TARGET_HOST = $(HOST_ARCH)-apple-macos13.0
-VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Sources/SuperClip/App/Info.plist 2>/dev/null || echo "1.0.4")
+VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Sources/SuperClip/App/Info.plist 2>/dev/null || echo "1.0.5")
 PACKAGE_ZIP = SuperClip-v$(VERSION).zip
 
 # Source file discovery
@@ -299,9 +299,9 @@ app: lint icon
 	@chmod 644 $(BUNDLE_DIR)/PkgInfo
 	@cp -f $(BUILD_DIR)/Resources/AppIcon.icns $(RESOURCES_DIR)/AppIcon.icns
 	@chmod 644 $(RESOURCES_DIR)/AppIcon.icns
-	@echo "Signing application bundle inside-out..."
+	@echo "Signing application bundle inside-out with stable designated requirement..."
 	$(CODESIGN) --force --sign - $(FRAMEWORKS_DIR)/libSuperClipCore.dylib
-	$(CODESIGN) --force --deep --sign - $(BUNDLE_NAME)
+	$(CODESIGN) --force --sign - -r='designated => identifier "com.superclip.SuperClip"' $(BUNDLE_NAME)
 	@echo "Verifying code signature integrity..."
 	$(CODESIGN) -v --deep --strict $(BUNDLE_NAME)
 	$(CODESIGN) --verify --verbose=4 $(FRAMEWORKS_DIR)/libSuperClipCore.dylib

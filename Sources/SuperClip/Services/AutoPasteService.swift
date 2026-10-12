@@ -127,7 +127,10 @@ public final class AutoPasteService: AutoPasteServicing, @unchecked Sendable {
 
     public init(
         pasteSimulator: any PasteSimulating = PasteSimulator.shared,
-        accessibilityChecker: @escaping () -> Bool = { AXIsProcessTrusted() },
+        accessibilityChecker: @escaping () -> Bool = {
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
+            return AXIsProcessTrustedWithOptions(options)
+        },
         accessibilityPrompter: @escaping () -> Bool = {
             let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
             return AXIsProcessTrustedWithOptions(options)

@@ -127,6 +127,7 @@ public struct SettingsView: View {
     @State private var showingResetConfirmation: Bool = false
     @State private var hotKeyWarningMessage: String? = nil
     @State private var isAccessibilityGranted: Bool = false
+    private let accessibilityCheckTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
 
     private final class SelectionBox: @unchecked Sendable {
         var id: String? = nil
@@ -209,13 +210,23 @@ public struct SettingsView: View {
         .frame(width: 490, height: 475)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
-            isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+            refreshAccessibilityStatus()
+        }
+        .onReceive(accessibilityCheckTimer) { _ in
+            if selectedTab == .general && storageManager.settings.autoPasteOnSelection {
+                refreshAccessibilityStatus()
+            }
+        }
+        .onReceive(DistributedNotificationCenter.default().publisher(for: NSNotification.Name("com.apple.accessibility.api"))) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                refreshAccessibilityStatus()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+            refreshAccessibilityStatus()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
-            isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+            refreshAccessibilityStatus()
         }
         .onDisappear {
             stopRecordingHotKey()
@@ -225,6 +236,15 @@ public struct SettingsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willResignActiveNotification)) { _ in
             stopRecordingHotKey()
+        }
+    }
+
+    private func refreshAccessibilityStatus() {
+        let trusted = autoPasteService.isAccessibilityTrusted
+        if isAccessibilityGranted != trusted {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isAccessibilityGranted = trusted
+            }
         }
     }
 
@@ -414,35 +434,69 @@ public struct SettingsView: View {
                         var s = storageManager.settings
                         s.autoPasteOnSelection = newVal
                         storageManager.settings = s
-                        isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+                        refreshAccessibilityStatus()
                     }
                 ))
                 .toggleStyle(.checkbox)
                 .font(.system(size: 11.5))
 
-                if storageManager.settings.autoPasteOnSelection && !isAccessibilityGranted {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 10))
-                            .foregroundColor(.orange)
+                if storageManager.settings.autoPasteOnSelection {
+                    if isAccessibilityGranted {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(.green)
 
-                        Text(LocalizationManager.shared.tr(.accessibilityPermissionRequired))
-                            .font(.system(size: 10.5))
-                            .foregroundColor(.secondary)
-
-                        Spacer()
-
-                        Button(LocalizationManager.shared.tr(.grantPermissionButton)) {
-                            autoPasteService.openAccessibilitySettings()
-                            _ = autoPasteService.requestAccessibilityPermission()
+                            Text(LocalizationManager.shared.tr(.accessibilityPermissionGranted))
+                                .font(.system(size: 10.5))
+                                .foregroundColor(.secondary)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .font(.system(size: 10.5))
+                        .padding(.leading, 18)
+                        .padding(.top, 2)
+                        .padding(.bottom, 2)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.orange)
+
+                                Text(LocalizationManager.shared.tr(.accessibilityPermissionRequired))
+                                    .font(.system(size: 10.5))
+                                    .foregroundColor(.secondary)
+
+                                Spacer()
+
+                                Button(LocalizationManager.shared.tr(.accessibilityRecheckButton)) {
+                                    refreshAccessibilityStatus()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .font(.system(size: 10.5))
+
+                                Button(LocalizationManager.shared.tr(.grantPermissionButton)) {
+                                    autoPasteService.openAccessibilitySettings()
+                                    _ = autoPasteService.requestAccessibilityPermission()
+                                    for delay in [0.5, 1.0, 2.0] {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                                            refreshAccessibilityStatus()
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.small)
+                                .font(.system(size: 10.5))
+                            }
+
+                            Text(LocalizationManager.shared.tr(.accessibilityToggleTip))
+                                .font(.system(size: 9.5))
+                                .foregroundColor(.secondary.opacity(0.85))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.leading, 18)
+                        .padding(.top, 2)
+                        .padding(.bottom, 2)
                     }
-                    .padding(.leading, 18)
-                    .padding(.top, 2)
-                    .padding(.bottom, 2)
                 }
 
                 Toggle(LocalizationManager.shared.tr(.automaticallyCheckForUpdates), isOn: Binding(

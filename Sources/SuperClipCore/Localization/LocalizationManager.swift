@@ -132,6 +132,9 @@ public enum L10nKey: Sendable {
     case recordClipboardHistory
     case autoPasteOnSelection
     case accessibilityPermissionRequired
+    case accessibilityPermissionGranted
+    case accessibilityRecheckButton
+    case accessibilityToggleTip
     case grantPermissionButton
     case languageLabel
     case shortcutLabel
@@ -609,6 +612,42 @@ public enum L10nKey: Sendable {
             case .french: return "L'autorisation d'accessibilité est requise pour coller automatiquement."
             case .german: return "Bedienungshilfen-Berechtigung für automatisches Einfügen erforderlich."
             default: return "Accessibility permission is required for direct auto-paste."
+            }
+
+        case .accessibilityPermissionGranted:
+            switch lang {
+            case .vietnamese: return "Đã cấp quyền Trợ năng cho SuperClip."
+            case .simplifiedChinese: return "已授予 SuperClip 辅助功能权限。"
+            case .japanese: return "SuperClip にアクセシビリティ権限が付与されました。"
+            case .korean: return "SuperClip에 손쉬운 사용 권한이 부여되었습니다."
+            case .spanish: return "Permiso de accesibilidad concedido a SuperClip."
+            case .french: return "Autorisation d'accessibilité accordée à SuperClip."
+            case .german: return "Bedienungshilfen-Berechtigung für SuperClip erteilt."
+            default: return "Accessibility permission granted to SuperClip."
+            }
+
+        case .accessibilityRecheckButton:
+            switch lang {
+            case .vietnamese: return "Kiểm tra lại"
+            case .simplifiedChinese: return "重新检查"
+            case .japanese: return "再確認"
+            case .korean: return "다시 확인"
+            case .spanish: return "Verificar"
+            case .french: return "Vérifier à nouveau"
+            case .german: return "Erneut prüfen"
+            default: return "Check Now"
+            }
+
+        case .accessibilityToggleTip:
+            switch lang {
+            case .vietnamese: return "Mẹo: Nếu trong Cài đặt hệ thống đã bật mà ứng dụng chưa nhận, vui lòng gạt Tắt rồi Bật lại cho SuperClip để làm mới quyền."
+            case .simplifiedChinese: return "提示：如果系统设置中已开启但仍未识别，请先关闭再重新开启 SuperClip 的权限以刷新。"
+            case .japanese: return "ヒント：システム設定で既に有効になっている場合は、一度オフにしてから再度オンにして権限を更新してください。"
+            case .korean: return "팁: 시스템 설정에서 이미 활성화되어 있는 경우 SuperClip을 껐다가 다시 켜서 권한을 새로고침하세요."
+            case .spanish: return "Consejo: Si ya está habilitado en Configuración del Sistema, desactívelo y vuelva a activarlo para actualizar los permisos."
+            case .french: return "Astuce : Si déjà activé dans Réglages Système, désactivez puis réactivez SuperClip pour rafraîchir les autorisations."
+            case .german: return "Tipp: Wenn in den Systemeinstellungen bereits aktiviert, schalten Sie SuperClip aus und wieder ein, um die Berechtigung zu aktualisieren."
+            default: return "Tip: If already enabled in System Settings, toggle SuperClip OFF then ON to refresh permissions."
             }
 
         case .grantPermissionButton:

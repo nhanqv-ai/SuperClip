@@ -61,7 +61,7 @@
 ### Installation
 
 #### Pre-built Release
-1. Download the latest `SuperClip-v1.0.4.zip` from [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
+1. Download the latest `SuperClip-v1.0.5.zip` from [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
 2. Unzip and drag `SuperClip.app` into your `/Applications` folder.
 3. Open `SuperClip.app`. An icon will appear on your macOS menu bar.
 
@@ -141,7 +141,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Hướng dẫn cài đặt
 
 #### Tải bản đóng gói sẵn
-1. Tải bản phát hành mới nhất `SuperClip-v1.0.4.zip` tại mục [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
+1. Tải bản phát hành mới nhất `SuperClip-v1.0.5.zip` tại mục [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
 2. Giải nén và kéo file `SuperClip.app` vào thư mục `/Applications` (Ứng dụng).
 3. Mở `SuperClip.app`. Biểu tượng ứng dụng sẽ xuất hiện trên thanh menu macOS.
 
