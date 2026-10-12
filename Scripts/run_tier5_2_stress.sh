@@ -19,7 +19,7 @@ make -C "$PROJECT_ROOT" app
 RUNNER_SRC="$PROJECT_ROOT/Scripts/challenger_tier5_2_stress_runner.swift"
 RUNNER_BIN="$PROJECT_ROOT/.tier5_2_stress_runner"
 
-HOST_ARCH="$(uname -m)"
+HOST_ARCH="${HOST_ARCH:-$(uname -m)}"
 
 echo "Compiling Tier 5 Challenger Stress Runner..."
 swiftc -sdk "$SDKROOT" \

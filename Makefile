@@ -33,6 +33,8 @@ TARGET_ARM64 = arm64-apple-macos13.0
 TARGET_X86_64 = x86_64-apple-macos13.0
 HOST_ARCH = $(shell uname -m)
 TARGET_HOST = $(HOST_ARCH)-apple-macos13.0
+VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Sources/SuperClip/App/Info.plist 2>/dev/null || echo "1.0.2")
+PACKAGE_ZIP = SuperClip-v$(VERSION).zip
 
 # Source file discovery
 CORE_SRCS = $(shell find Sources/SuperClipCore -name '*.swift' 2>/dev/null)
@@ -55,7 +57,7 @@ help:
 	@echo "  make icon        - Programmatically generate AppIcon.icns"
 	@echo "  make app         - Assemble and codesign standalone SuperClip.app bundle"
 	@echo "  make bundle      - Assemble and codesign standalone SuperClip.app bundle (alias for app)"
-	@echo "  make package     - Assemble and codesign standalone SuperClip.app bundle (alias for app)"
+	@echo "  make package     - Assemble, codesign, and package Universal 2 zip archive"
 	@echo "  make verify-app  - Verify SuperClip.app bundle integrity & headless launch"
 	@echo "  make lint        - Verify strict 0-emoji constraint"
 	@echo "  make test        - Run automated test suite"
@@ -306,7 +308,12 @@ app: lint icon
 	@echo "SuperClip.app standalone packaging complete."
 
 bundle: app
+
 package: app
+	@echo "Packaging distributable Universal 2 archive: $(PACKAGE_ZIP)..."
+	@rm -f $(PACKAGE_ZIP)
+	@ditto -c -k --sequesterRsrc --keepParent $(BUNDLE_NAME) $(PACKAGE_ZIP)
+	@echo "Universal 2 distribution archive created: $(PACKAGE_ZIP)"
 
 # Standalone App Bundle Verification
 verify-app: bundle

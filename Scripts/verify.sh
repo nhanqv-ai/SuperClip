@@ -92,7 +92,7 @@ SWIFT_FILES=(
 
 VERIFIER_BIN="$PROJECT_ROOT/.verifier_bin"
 
-HOST_ARCH="$(uname -m)"
+HOST_ARCH="${HOST_ARCH:-$(uname -m)}"
 
 swiftc -sdk "$SDKROOT" \
     -target "${HOST_ARCH}-apple-macos13.0" \

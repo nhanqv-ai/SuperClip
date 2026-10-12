@@ -210,6 +210,10 @@ CLEANUP() {
         kill -TERM "$APP_PID" 2>/dev/null || kill -9 "$APP_PID" 2>/dev/null
         wait "$APP_PID" 2>/dev/null || true
     fi
+    if [ -n "${APP_PID_X86:-}" ] && kill -0 "$APP_PID_X86" 2>/dev/null; then
+        kill -TERM "$APP_PID_X86" 2>/dev/null || kill -9 "$APP_PID_X86" 2>/dev/null
+        wait "$APP_PID_X86" 2>/dev/null || true
+    fi
     rm -rf "$ISOLATED_DIR"
 }
 trap CLEANUP EXIT

@@ -18,7 +18,7 @@ make -C "$PROJECT_ROOT" build
 ADVERSARIAL_SRC="$PROJECT_ROOT/Tests/AdversarialRunner/M2AdversarialRunner.swift"
 ADVERSARIAL_BIN="$PROJECT_ROOT/.m2_adversarial_bin"
 
-HOST_ARCH="$(uname -m)"
+HOST_ARCH="${HOST_ARCH:-$(uname -m)}"
 
 swiftc -sdk "$SDKROOT" \
     -target "${HOST_ARCH}-apple-macos13.0" \
