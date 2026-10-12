@@ -6,23 +6,35 @@ import SuperClipCore
 public final class ClipboardActionCoordinator {
     public let storageManager: any StorageManaging
     public let pasteboardWriter: any PasteboardWriting
+    public let autoPasteService: any AutoPasteServicing
+    public let previousAppTracker: any PreviousAppTracking
     public var onDismiss: (() -> Void)?
 
     public init(
         storageManager: any StorageManaging,
         pasteboardWriter: any PasteboardWriting,
+        autoPasteService: any AutoPasteServicing = AutoPasteService.shared,
+        previousAppTracker: any PreviousAppTracking = PreviousAppTracker.shared,
         onDismiss: (() -> Void)? = nil
     ) {
         self.storageManager = storageManager
         self.pasteboardWriter = pasteboardWriter
+        self.autoPasteService = autoPasteService
+        self.previousAppTracker = previousAppTracker
         self.onDismiss = onDismiss
     }
 
-    /// Selects an item, writes it to pasteboard, suppresses self-copy, and dismisses the UI.
+    /// Selects an item, writes it to pasteboard, suppresses self-copy, dismisses the UI,
+    /// and triggers direct auto-paste to the previous active application if enabled.
     public func selectAndCopy(item: ClipItem) {
         let success = pasteboardWriter.writeClip(item, storageManager: storageManager)
-        if success {
-            onDismiss?()
+        guard success else { return }
+
+        let targetApp = previousAppTracker.previousApp
+        onDismiss?()
+
+        if storageManager.settings.autoPasteOnSelection {
+            autoPasteService.pasteToActiveApp(targetApp: targetApp)
         }
     }
 

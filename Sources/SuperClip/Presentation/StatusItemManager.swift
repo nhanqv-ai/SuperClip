@@ -21,6 +21,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
 
     public weak var floatingPanel: (any FloatingPanelPresenting)?
     public var hotKeyManager: any HotKeyManaging
+    public var previousAppTracker: any PreviousAppTracking
 
     /// Optional reference to the settings window controller
     public weak var settingsWindowController: SettingsWindowController?
@@ -101,7 +102,8 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         floatingPanel: (any FloatingPanelPresenting)? = nil,
         hotKeyManager: any HotKeyManaging = HotKeyManager.shared,
         settingsWindowController: SettingsWindowController? = nil,
-        storageManager: (any StorageManaging)? = nil
+        storageManager: (any StorageManaging)? = nil,
+        previousAppTracker: any PreviousAppTracking = PreviousAppTracker.shared
     ) {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         self.popover = NSPopover()
@@ -109,6 +111,10 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         self.hotKeyManager = hotKeyManager
         self.settingsWindowController = settingsWindowController
         self.storageManager = storageManager
+        self.previousAppTracker = previousAppTracker
+        if let panel = floatingPanel as? FloatingClipPanel {
+            panel.previousAppTracker = previousAppTracker
+        }
 
         super.init()
 
@@ -211,6 +217,8 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
     // MARK: - Status Item Action Handling
 
     @objc public func statusItemClicked(_ sender: Any?) {
+        previousAppTracker.captureFrontmostApplication()
+
         let event = NSApp.currentEvent
         let isRightClick = (event?.type == .rightMouseUp) ||
             ((event?.type == .leftMouseUp) && (event?.modifierFlags.contains(.control) == true))
@@ -388,6 +396,9 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         guard let button = statusItem.button else { return }
         guard popover.contentViewController != nil else { return }
 
+        // Capture previous frontmost app before SuperClip popover activates
+        previousAppTracker.captureFrontmostApplication()
+
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         installEscapeMonitor()
 
@@ -412,6 +423,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         popover.animates = false
         popover.close()
         popover.animates = wasAnimated
+        previousAppTracker.clear()
         onPopoverVisibilityChanged?(false)
     }
 
@@ -441,8 +453,12 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
         // Toggle behavior: If floating panel is already visible and key, dismiss it
         if let panel = floatingPanel, panel.isVisible && panel.isKeyWindow {
             panel.dismiss()
+            previousAppTracker.clear()
             return
         }
+
+        // Capture previous frontmost app before floating panel is presented
+        previousAppTracker.captureFrontmostApplication()
 
         // Summon floating panel near current mouse position
         let mouseLoc = NSEvent.mouseLocation
@@ -460,6 +476,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
 
         closePopover()
         floatingPanel?.dismiss()
+        previousAppTracker.clear()
         onDismissRequested?()
     }
 
@@ -494,6 +511,7 @@ public final class StatusItemManager: NSObject, NSPopoverDelegate, NSMenuDelegat
     public func popoverDidClose(_ notification: Notification) {
         lastPopoverCloseTimestamp = ProcessInfo.processInfo.systemUptime
         removeEscapeMonitor()
+        previousAppTracker.clear()
         onPopoverVisibilityChanged?(false)
     }
 

@@ -23,6 +23,7 @@ public struct MainContentView: View {
     @ObservedObject private var localizationManager = LocalizationManager.shared
     public var pasteboardWriter: any PasteboardWriting
     public var pasteboardMonitor: (any PasteboardMonitoring)?
+    public var coordinator: ClipboardActionCoordinator
     public var onDismiss: (() -> Void)?
     public var onItemSelected: ((ClipItem) -> Void)?
     public var onOpenSettings: (() -> Void)?
@@ -40,6 +41,9 @@ public struct MainContentView: View {
         pasteboardWriter: (any PasteboardWriting)? = nil,
         pasteboardMonitor: (any PasteboardMonitoring)? = nil,
         updateManager: UpdateManager = UpdateManager.shared,
+        autoPasteService: (any AutoPasteServicing)? = nil,
+        previousAppTracker: (any PreviousAppTracking)? = nil,
+        coordinator: ClipboardActionCoordinator? = nil,
         onDismiss: (() -> Void)? = nil,
         onItemSelected: ((ClipItem) -> Void)? = nil,
         onOpenSettings: (() -> Void)? = nil
@@ -47,11 +51,19 @@ public struct MainContentView: View {
         self.storageManager = storageManager
         let monitor = pasteboardMonitor ?? PasteboardMonitor.shared
         self.pasteboardMonitor = monitor
-        self.pasteboardWriter = pasteboardWriter ?? PasteboardWriter(pasteboard: .general, monitor: monitor)
+        let writer = pasteboardWriter ?? PasteboardWriter(pasteboard: .general, monitor: monitor)
+        self.pasteboardWriter = writer
         self.updateManager = updateManager
         self.onDismiss = onDismiss
         self.onItemSelected = onItemSelected
         self.onOpenSettings = onOpenSettings
+        self.coordinator = coordinator ?? ClipboardActionCoordinator(
+            storageManager: storageManager,
+            pasteboardWriter: writer,
+            autoPasteService: autoPasteService ?? AutoPasteService.shared,
+            previousAppTracker: previousAppTracker ?? PreviousAppTracker.shared,
+            onDismiss: onDismiss
+        )
     }
 
     // MARK: - Computed Properties
@@ -350,7 +362,7 @@ public struct MainContentView: View {
                 storageManager.toggleMaskItem(id: item.id)
             },
             onCopy: { item in
-                selectItem(item)
+                copyItem(item)
             },
             onDelete: { item in
                 storageManager.deleteItem(id: item.id)
@@ -368,9 +380,15 @@ public struct MainContentView: View {
 
     public func selectItem(_ item: ClipItem) {
         ThumbnailHoverPreviewPanel.shared.hide()
-        _ = pasteboardWriter.writeClip(item, storageManager: storageManager)
+        coordinator.onDismiss = onDismiss
+        coordinator.selectAndCopy(item: item)
         onItemSelected?(item)
-        onDismiss?()
+    }
+
+    public func copyItem(_ item: ClipItem) {
+        ThumbnailHoverPreviewPanel.shared.hide()
+        coordinator.onDismiss = onDismiss
+        coordinator.copyItem(item: item, dismiss: true)
     }
 
     /// Static helper executing copy-only writeback to NSPasteboard.general with zero accessibility permissions.

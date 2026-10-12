@@ -92,6 +92,9 @@ struct VerificationRunner {
         // 22. Auto-Updater & GitHub Release Tests
         UpdateManagerTests.run(sandboxDir: sandboxURL.appendingPathComponent("UpdateTest"))
 
+        // 23. Direct Auto-Paste (Automatic Paste on Selection) Tests
+        AutoPasteTests.run(sandboxDir: sandboxURL.appendingPathComponent("AutoPasteTest"))
+
         let elapsed = Date().timeIntervalSince(startTimestamp)
         print("\nVerification completed in \(String(format: "%.3f", elapsed)) seconds.")
         

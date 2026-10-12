@@ -13,6 +13,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var ignoredApps: [IgnoredApp]
     public var automaticallyCheckForUpdates: Bool
     public var lastUpdateCheckDate: Date?
+    public var autoPasteOnSelection: Bool
 
     public static let defaultCapacity: Int = 100
     public static let defaultHotKeyKeyCode: UInt32 = 9 // kVK_ANSI_V
@@ -26,6 +27,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public static let defaultIgnoredApps: [IgnoredApp] = []
     public static let defaultAutomaticallyCheckForUpdates: Bool = true
     public static let defaultLastUpdateCheckDate: Date? = nil
+    public static let defaultAutoPasteOnSelection: Bool = true
 
     public var historyCapacity: Int {
         get { capacity }
@@ -54,7 +56,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         language: String = AppSettings.defaultLanguage,
         ignoredApps: [IgnoredApp] = [],
         automaticallyCheckForUpdates: Bool = AppSettings.defaultAutomaticallyCheckForUpdates,
-        lastUpdateCheckDate: Date? = AppSettings.defaultLastUpdateCheckDate
+        lastUpdateCheckDate: Date? = AppSettings.defaultLastUpdateCheckDate,
+        autoPasteOnSelection: Bool = AppSettings.defaultAutoPasteOnSelection
     ) {
         self.capacity = max(10, min(capacity, 1000))
         self.hotKeyKeyCode = hotKeyKeyCode
@@ -68,6 +71,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.ignoredApps = ignoredApps
         self.automaticallyCheckForUpdates = automaticallyCheckForUpdates
         self.lastUpdateCheckDate = lastUpdateCheckDate
+        self.autoPasteOnSelection = autoPasteOnSelection
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -83,6 +87,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case ignoredApps
         case automaticallyCheckForUpdates
         case lastUpdateCheckDate
+        case autoPasteOnSelection
     }
 
     public init(from decoder: Decoder) throws {
@@ -103,6 +108,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.ignoredApps = try container.decodeIfPresent([IgnoredApp].self, forKey: .ignoredApps) ?? []
         self.automaticallyCheckForUpdates = try container.decodeIfPresent(Bool.self, forKey: .automaticallyCheckForUpdates) ?? true
         self.lastUpdateCheckDate = try container.decodeIfPresent(Date.self, forKey: .lastUpdateCheckDate)
+        self.autoPasteOnSelection = try container.decodeIfPresent(Bool.self, forKey: .autoPasteOnSelection) ?? true
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -119,5 +125,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try container.encode(ignoredApps, forKey: .ignoredApps)
         try container.encode(automaticallyCheckForUpdates, forKey: .automaticallyCheckForUpdates)
         try container.encodeIfPresent(lastUpdateCheckDate, forKey: .lastUpdateCheckDate)
+        try container.encode(autoPasteOnSelection, forKey: .autoPasteOnSelection)
     }
 }

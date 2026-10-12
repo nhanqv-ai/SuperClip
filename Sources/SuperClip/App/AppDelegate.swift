@@ -86,6 +86,10 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             storageManager: storageManager
         )
 
+        floatingPanel.onDismiss = { [weak self] in
+            self?.statusItemManager.dismissAll()
+        }
+
         statusItemManager.onOpenSettingsRequested = { [weak self] in
             self?.openSettings()
         }

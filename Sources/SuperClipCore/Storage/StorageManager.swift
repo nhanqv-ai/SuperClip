@@ -4,6 +4,7 @@ import Combine
 public protocol StorageManaging: AnyObject, ObservableObject {
     var items: [ClipItem] { get }
     var capacity: Int { get set }
+    var settings: AppSettings { get }
     func addClip(item: ClipItem, imageData: Data?, thumbData: Data?)
     func togglePin(id: UUID)
     func toggleMaskItem(id: UUID)
@@ -18,6 +19,7 @@ public protocol StorageManaging: AnyObject, ObservableObject {
 }
 
 extension StorageManaging {
+    public var settings: AppSettings { AppSettings() }
     public func toggleMaskItem(id: UUID) {}
     public func addIgnoredApp(_ app: IgnoredApp) {}
     public func removeIgnoredApp(bundleIdentifier: String) {}

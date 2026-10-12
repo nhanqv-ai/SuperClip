@@ -28,6 +28,9 @@ public final class FloatingClipPanel: NSPanel, FloatingPanelPresenting {
     /// Callback invoked when a clip item is selected.
     public var onItemSelected: ((ClipItem) -> Void)?
 
+    /// Tracker capturing the active application before presenting the panel.
+    public var previousAppTracker: any PreviousAppTracking = PreviousAppTracker.shared
+
     // MARK: - Private Lifecycle State
 
     /// Global event monitor observing mouse clicks outside application windows.
@@ -126,6 +129,7 @@ public final class FloatingClipPanel: NSPanel, FloatingPanelPresenting {
             return
         }
 
+        previousAppTracker.captureFrontmostApplication()
         self.setFrame(frame, display: true)
         self.isDismissing = false
         installEventMonitors()
@@ -189,6 +193,7 @@ public final class FloatingClipPanel: NSPanel, FloatingPanelPresenting {
         removeEventMonitors()
         ThumbnailHoverPreviewPanel.shared.hide()
         self.orderOut(nil)
+        previousAppTracker.clear()
         isDismissing = false
         onDismiss?()
     }

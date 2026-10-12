@@ -130,6 +130,9 @@ public enum L10nKey: Sendable {
     case optionsTitle
     case startAtLogin
     case recordClipboardHistory
+    case autoPasteOnSelection
+    case accessibilityPermissionRequired
+    case grantPermissionButton
     case languageLabel
     case shortcutLabel
     case shortcutHelperText
@@ -582,6 +585,42 @@ public enum L10nKey: Sendable {
             case .french: return "Enregistrer l'historique du presse-papiers"
             case .german: return "Zwischenablage aufzeichnen"
             default: return "Record clipboard history"
+            }
+
+        case .autoPasteOnSelection:
+            switch lang {
+            case .vietnamese: return "Tự động dán vào ứng dụng đang mở"
+            case .simplifiedChinese: return "自动粘贴到当前活动应用"
+            case .japanese: return "アクティブなアプリへ自動貼り付け"
+            case .korean: return "활성 앱으로 자동 붙여넣기"
+            case .spanish: return "Pegar automáticamente en la aplicación activa"
+            case .french: return "Coller automatiquement dans l'application active"
+            case .german: return "Automatisch in aktive Anwendung einfügen"
+            default: return "Automatically paste into active application"
+            }
+
+        case .accessibilityPermissionRequired:
+            switch lang {
+            case .vietnamese: return "Cần cấp quyền Trợ năng để tự động dán."
+            case .simplifiedChinese: return "自动粘贴需要辅助功能权限。"
+            case .japanese: return "自動貼り付けにはアクセシビリティ権限が必要です。"
+            case .korean: return "자동 붙여넣기를 사용하려면 손쉬운 사용 권한이 필요합니다."
+            case .spanish: return "Se requiere permiso de accesibilidad para pegar automáticamente."
+            case .french: return "L'autorisation d'accessibilité est requise pour coller automatiquement."
+            case .german: return "Bedienungshilfen-Berechtigung für automatisches Einfügen erforderlich."
+            default: return "Accessibility permission is required for direct auto-paste."
+            }
+
+        case .grantPermissionButton:
+            switch lang {
+            case .vietnamese: return "Cấp quyền..."
+            case .simplifiedChinese: return "授予权限..."
+            case .japanese: return "権限を付与..."
+            case .korean: return "권한 허용..."
+            case .spanish: return "Conceder permiso..."
+            case .french: return "Accorder l'autorisation..."
+            case .german: return "Berechtigung erteilen..."
+            default: return "Grant Permission..."
             }
 
         case .languageLabel:

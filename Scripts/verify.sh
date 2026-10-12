@@ -55,6 +55,8 @@ SWIFT_FILES=(
     "$PROJECT_ROOT/Sources/SuperClip/Presentation/StatusItemManager.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Services/ShortcutNavigator.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Services/PasteboardWriter.swift"
+    "$PROJECT_ROOT/Sources/SuperClip/Services/PreviousAppTracker.swift"
+    "$PROJECT_ROOT/Sources/SuperClip/Services/AutoPasteService.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Services/ClipboardActionCoordinator.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Views/SearchBarView.swift"
     "$PROJECT_ROOT/Sources/SuperClip/Views/ClipRowView.swift"
@@ -87,6 +89,7 @@ SWIFT_FILES=(
     "$PROJECT_ROOT/Tests/SuperClipTests/BoundaryTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/PairwiseTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/WorkloadTests.swift"
+    "$PROJECT_ROOT/Tests/SuperClipTests/AutoPasteTests.swift"
     "$PROJECT_ROOT/Tests/VerificationRunner/main.swift"
 )
 

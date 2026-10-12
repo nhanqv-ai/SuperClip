@@ -117,6 +117,7 @@ public struct SettingsView: View {
     @ObservedObject private var localizationManager = LocalizationManager.shared
     public var hotKeyManager: HotKeyManaging
     public var launchAtLoginManager: any LaunchAtLoginManaging
+    public var autoPasteService: any AutoPasteServicing
     public var onDismiss: (() -> Void)?
 
     @State private var selectedTab: SettingsTab = .general
@@ -125,6 +126,7 @@ public struct SettingsView: View {
     @State private var showingClearConfirmation: Bool = false
     @State private var showingResetConfirmation: Bool = false
     @State private var hotKeyWarningMessage: String? = nil
+    @State private var isAccessibilityGranted: Bool = false
 
     private final class SelectionBox: @unchecked Sendable {
         var id: String? = nil
@@ -179,6 +181,7 @@ public struct SettingsView: View {
         hotKeyManager: HotKeyManaging = HotKeyManager.shared,
         launchAtLoginManager: any LaunchAtLoginManaging = LaunchAtLoginManager.shared,
         updateManager: UpdateManager = UpdateManager.shared,
+        autoPasteService: any AutoPasteServicing = AutoPasteService.shared,
         initialTab: SettingsTab = .general,
         initialRecording: Bool = false,
         onClose: (() -> Void)? = nil,
@@ -188,8 +191,10 @@ public struct SettingsView: View {
         self.hotKeyManager = hotKeyManager
         self.launchAtLoginManager = launchAtLoginManager
         self.updateManager = updateManager
+        self.autoPasteService = autoPasteService
         self._selectedTab = State(initialValue: initialTab)
         self._isRecordingHotKey = State(initialValue: initialRecording)
+        self._isAccessibilityGranted = State(initialValue: autoPasteService.isAccessibilityTrusted)
         self.onDismiss = onClose ?? onDismiss
     }
 
@@ -203,6 +208,15 @@ public struct SettingsView: View {
         }
         .frame(width: 490, height: 475)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear {
+            isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+            isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+        }
         .onDisappear {
             stopRecordingHotKey()
         }
@@ -393,6 +407,43 @@ public struct SettingsView: View {
                 ))
                 .toggleStyle(.checkbox)
                 .font(.system(size: 11.5))
+
+                Toggle(LocalizationManager.shared.tr(.autoPasteOnSelection), isOn: Binding(
+                    get: { storageManager.settings.autoPasteOnSelection },
+                    set: { newVal in
+                        var s = storageManager.settings
+                        s.autoPasteOnSelection = newVal
+                        storageManager.settings = s
+                        isAccessibilityGranted = autoPasteService.isAccessibilityTrusted
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .font(.system(size: 11.5))
+
+                if storageManager.settings.autoPasteOnSelection && !isAccessibilityGranted {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 10))
+                            .foregroundColor(.orange)
+
+                        Text(LocalizationManager.shared.tr(.accessibilityPermissionRequired))
+                            .font(.system(size: 10.5))
+                            .foregroundColor(.secondary)
+
+                        Spacer()
+
+                        Button(LocalizationManager.shared.tr(.grantPermissionButton)) {
+                            autoPasteService.openAccessibilitySettings()
+                            _ = autoPasteService.requestAccessibilityPermission()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .font(.system(size: 10.5))
+                    }
+                    .padding(.leading, 18)
+                    .padding(.top, 2)
+                    .padding(.bottom, 2)
+                }
 
                 Toggle(LocalizationManager.shared.tr(.automaticallyCheckForUpdates), isOn: Binding(
                     get: { storageManager.settings.automaticallyCheckForUpdates },
