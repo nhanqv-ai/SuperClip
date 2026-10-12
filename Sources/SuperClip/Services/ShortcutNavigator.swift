@@ -27,27 +27,33 @@ public struct ShortcutNavigator {
     }
 
     /// Steps selection down (Down Arrow key navigation).
-    /// If currentIndex is nil, selects 0. Otherwise increments up to visibleCount - 1.
+    /// - If visibleCount <= 0: returns nil.
+    /// - If currentIndex == nil, current < 0, or current >= visibleCount - 1: wraps around and returns 0.
+    /// - Otherwise: returns current + 1.
     public static func stepDown(
         currentIndex: Int?,
         visibleCount: Int
     ) -> Int? {
         guard visibleCount > 0 else { return nil }
         guard let current = currentIndex else { return 0 }
-        return min(current + 1, visibleCount - 1)
+        if current < 0 || current >= visibleCount - 1 {
+            return 0
+        }
+        return current + 1
     }
 
     /// Steps selection up (Up Arrow key navigation).
-    /// If currentIndex is nil, remains nil. If 0, returns nil to restore search focus.
-    /// Otherwise decrements by 1.
+    /// - If visibleCount <= 0: returns nil.
+    /// - If currentIndex == nil, current <= 0, or current >= visibleCount: wraps around and returns visibleCount - 1.
+    /// - Otherwise: returns current - 1.
     public static func stepUp(
         currentIndex: Int?,
         visibleCount: Int
     ) -> Int? {
         guard visibleCount > 0 else { return nil }
-        guard let current = currentIndex else { return nil }
-        if current <= 0 {
-            return nil
+        guard let current = currentIndex else { return visibleCount - 1 }
+        if current <= 0 || current >= visibleCount {
+            return visibleCount - 1
         }
         return current - 1
     }

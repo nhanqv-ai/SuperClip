@@ -95,6 +95,9 @@ struct VerificationRunner {
         // 23. Direct Auto-Paste (Automatic Paste on Selection) Tests
         AutoPasteTests.run(sandboxDir: sandboxURL.appendingPathComponent("AutoPasteTest"))
 
+        // 24. Circular Keyboard Arrow Navigation Tests
+        ShortcutNavigatorTests.run()
+
         let elapsed = Date().timeIntervalSince(startTimestamp)
         print("\nVerification completed in \(String(format: "%.3f", elapsed)) seconds.")
         

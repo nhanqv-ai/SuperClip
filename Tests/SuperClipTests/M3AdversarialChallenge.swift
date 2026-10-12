@@ -394,12 +394,12 @@ public struct M3AdversarialChallengeRunner {
             passed: ShortcutNavigator.stepUp(currentIndex: nil, visibleCount: 0) == nil
         )
         report(
-            name: "stepDown clamps strictly at visibleCount - 1 (index 99)",
-            passed: ShortcutNavigator.stepDown(currentIndex: 99, visibleCount: 100) == 99
+            name: "stepDown wraps from visibleCount - 1 (index 99) to 0",
+            passed: ShortcutNavigator.stepDown(currentIndex: 99, visibleCount: 100) == 0
         )
         report(
-            name: "stepUp from index 0 returns nil to restore search focus",
-            passed: ShortcutNavigator.stepUp(currentIndex: 0, visibleCount: 100) == nil
+            name: "stepUp from index 0 wraps to visibleCount - 1 (index 99)",
+            passed: ShortcutNavigator.stepUp(currentIndex: 0, visibleCount: 100) == 99
         )
 
         // ==========================================

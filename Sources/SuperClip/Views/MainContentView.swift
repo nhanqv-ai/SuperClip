@@ -33,6 +33,7 @@ public struct MainContentView: View {
     @State private var searchText: String = ""
     @State private var selectedIndex: Int? = nil
     @State private var localKeyMonitor: Any? = nil
+    @State private var hostWindow: NSWindow? = nil
 
     // MARK: - Initialization
 
@@ -122,12 +123,42 @@ public struct MainContentView: View {
                     )
             )
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(
+                WindowAccessor { win in
+                    if let win = win {
+                        self.hostWindow = win
+                    }
+                }
+            )
             .onAppear {
                 installKeyboardMonitor()
+                resetSelection(scrollProxy: proxy)
             }
             .onDisappear {
                 ThumbnailHoverPreviewPanel.shared.hide()
                 removeKeyboardMonitor()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notif in
+                guard let win = notif.object as? NSWindow else { return }
+                if let host = hostWindow {
+                    guard win === host else { return }
+                } else if win.title == "SuperClip Settings" || win.title.hasPrefix("About") {
+                    return
+                }
+                installKeyboardMonitor()
+                resetSelection(scrollProxy: proxy)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notif in
+                guard let win = notif.object as? NSWindow else { return }
+                if let host = hostWindow, win === host {
+                    removeKeyboardMonitor()
+                }
+            }
+            .onChange(of: searchText) { newQuery in
+                resetSelection(query: newQuery, scrollProxy: proxy)
+            }
+            .onChange(of: storageManager.items) { _ in
+                resetSelection(scrollProxy: proxy)
             }
             .onChange(of: selectedIndex) { newIndex in
                 if let idx = newIndex, idx >= 0 && idx < visibleItems.count {
@@ -397,6 +428,29 @@ public struct MainContentView: View {
         _ = writer.writeClip(item, storageManager: storageManager)
     }
 
+    private func resetSelection(query: String? = nil, scrollProxy: ScrollViewProxy? = nil) {
+        let q = query ?? searchText
+        let (pinned, recent) = SearchEngine.partition(items: storageManager.items, query: q)
+        let maxDisplay = storageManager.settings.displayCapacity
+        let cappedRecent = maxDisplay > 0 ? Array(recent.prefix(maxDisplay)) : recent
+        let count = pinned.count + cappedRecent.count
+        selectedIndex = count > 0 ? 0 : nil
+
+        if count > 0, let firstID = (pinned.first ?? cappedRecent.first)?.id {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                scrollProxy?.scrollTo(firstID, anchor: .center)
+            }
+        }
+    }
+
+    private var isSearchFieldFocused: Bool {
+        let keyWin = hostWindow ?? NSApp.keyWindow
+        if let responder = keyWin?.firstResponder {
+            return responder is NSTextView
+        }
+        return false
+    }
+
     private func handleReturnKey() {
         if let target = ShortcutNavigator.resolveReturnTarget(
             currentIndex: selectedIndex,
@@ -409,6 +463,17 @@ public struct MainContentView: View {
     private func installKeyboardMonitor() {
         removeKeyboardMonitor()
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Window isolation guard: only intercept events targeted at our hosting window
+            if let host = hostWindow {
+                guard let eventWin = event.window, eventWin === host, host.isKeyWindow, host.isVisible else {
+                    return event
+                }
+            } else if let eventWin = event.window {
+                if eventWin.title == "SuperClip Settings" || eventWin.title.hasPrefix("About") || !eventWin.isKeyWindow {
+                    return event
+                }
+            }
+
             // Escape key (53)
             if event.keyCode == 53 {
                 onDismiss?()
@@ -431,32 +496,38 @@ public struct MainContentView: View {
                 return nil
             }
 
-            // Down Arrow key (125)
-            if event.keyCode == 125 {
-                selectedIndex = ShortcutNavigator.stepDown(
-                    currentIndex: selectedIndex,
-                    visibleCount: visibleCount
-                )
-                return nil
-            }
+            // IME marked text guard: If composition/marked text is active in the search field,
+            // yield arrow keys and Enter/Return to the input method editor for candidate selection.
+            let targetWin = hostWindow ?? NSApp.keyWindow
+            let hasMarkedText = (targetWin?.firstResponder as? NSTextView)?.hasMarkedText() ?? false
+            if !hasMarkedText {
+                // Down Arrow key (125)
+                if event.keyCode == 125 {
+                    selectedIndex = ShortcutNavigator.stepDown(
+                        currentIndex: selectedIndex,
+                        visibleCount: visibleCount
+                    )
+                    return nil
+                }
 
-            // Up Arrow key (126)
-            if event.keyCode == 126 {
-                selectedIndex = ShortcutNavigator.stepUp(
-                    currentIndex: selectedIndex,
-                    visibleCount: visibleCount
-                )
-                return nil
-            }
+                // Up Arrow key (126)
+                if event.keyCode == 126 {
+                    selectedIndex = ShortcutNavigator.stepUp(
+                        currentIndex: selectedIndex,
+                        visibleCount: visibleCount
+                    )
+                    return nil
+                }
 
-            // Return / Enter key (36)
-            if event.keyCode == 36 {
-                handleReturnKey()
-                return nil
+                // Return / Enter key (36: Return, 76: Keypad Enter)
+                if event.keyCode == 36 || event.keyCode == 76 {
+                    handleReturnKey()
+                    return nil
+                }
             }
 
             // Section-Aware Shortcuts (Option for pinned, Command for recent)
-            if let sectionShortcut = ShortcutNavigator.parseSectionShortcut(from: event, searchFieldHasFocus: selectedIndex == nil) {
+            if let sectionShortcut = ShortcutNavigator.parseSectionShortcut(from: event, searchFieldHasFocus: isSearchFieldFocused) {
                 if let target = ShortcutNavigator.targetItem(
                     forSectionShortcut: sectionShortcut,
                     pinnedItems: partitionedClips.pinned,
@@ -468,7 +539,7 @@ public struct MainContentView: View {
             }
 
             // Command + 1..9 or bare 1..9 (if list focused)
-            if let shortcutDigit = ShortcutNavigator.parseShortcut(from: event, searchFieldHasFocus: selectedIndex == nil) {
+            if let shortcutDigit = ShortcutNavigator.parseShortcut(from: event, searchFieldHasFocus: isSearchFieldFocused) {
                 if let target = ShortcutNavigator.targetItem(forShortcut: shortcutDigit, in: visibleItems) {
                     selectItem(target)
                     return nil
@@ -484,5 +555,32 @@ public struct MainContentView: View {
             NSEvent.removeMonitor(monitor)
             localKeyMonitor = nil
         }
+    }
+}
+
+// MARK: - Window Accessor Supporting View
+
+private struct WindowAccessor: NSViewRepresentable {
+    let onWindow: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = WindowObserverView()
+        view.onWindowChange = onWindow
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let window = nsView.window {
+            onWindow(window)
+        }
+    }
+}
+
+private final class WindowObserverView: NSView {
+    var onWindowChange: ((NSWindow?) -> Void)?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onWindowChange?(self.window)
     }
 }

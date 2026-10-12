@@ -264,9 +264,9 @@ public struct SwiftUIInterfaceTests {
         TestHarness.assertEqual(downFrom0, 1, "Down Arrow steps 0 -> 1")
         TestHarness.assertEqual(downFrom1, 2, "Down Arrow steps 1 -> 2")
 
-        // Step Down clamped at visibleCount - 1
+        // Step Down wrap-around at visibleCount - 1 to 0
         let downFromMax = ShortcutNavigator.stepDown(currentIndex: 3, visibleCount: 4)
-        TestHarness.assertEqual(downFromMax, 3, "Down Arrow clamps at index 3 (visibleCount - 1)")
+        TestHarness.assertEqual(downFromMax, 0, "Down Arrow wraps around from index 3 (visibleCount - 1) to 0")
 
         // Step Up sequential decrement
         let upFrom2 = ShortcutNavigator.stepUp(currentIndex: 2, visibleCount: 4)
@@ -274,9 +274,13 @@ public struct SwiftUIInterfaceTests {
         TestHarness.assertEqual(upFrom2, 1, "Up Arrow steps 2 -> 1")
         TestHarness.assertEqual(upFrom1, 0, "Up Arrow steps 1 -> 0")
 
-        // Step Up from 0 returns nil to restore search bar focus
+        // Step Up wrap-around from 0 to visibleCount - 1
         let upFrom0 = ShortcutNavigator.stepUp(currentIndex: 0, visibleCount: 4)
-        TestHarness.assertNil(upFrom0, "Up Arrow from row 0 deselects to return focus to search bar")
+        TestHarness.assertEqual(upFrom0, 3, "Up Arrow wraps around from index 0 to 3 (visibleCount - 1)")
+
+        // Step Up from unselected selects visibleCount - 1
+        let upFromNil = ShortcutNavigator.stepUp(currentIndex: nil, visibleCount: 4)
+        TestHarness.assertEqual(upFromNil, 3, "Up Arrow from unselected selects index 3 (visibleCount - 1)")
 
         // Empty list safety
         TestHarness.assertNil(ShortcutNavigator.stepDown(currentIndex: nil, visibleCount: 0), "Step down on empty list returns nil")

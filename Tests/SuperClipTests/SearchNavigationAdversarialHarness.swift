@@ -618,12 +618,12 @@ public struct SearchNavigationAdversarialHarness {
                      ShortcutNavigator.stepDown(currentIndex: 3, visibleCount: 5) == 4)
         )
         report(
-            name: "stepDown clamps at index 4 (visibleCount - 1)",
-            passed: ShortcutNavigator.stepDown(currentIndex: 4, visibleCount: 5) == 4
+            name: "stepDown wraps around at index 4 (visibleCount - 1) to 0",
+            passed: ShortcutNavigator.stepDown(currentIndex: 4, visibleCount: 5) == 0
         )
         report(
-            name: "stepDown clamps when currentIndex is out-of-bounds large",
-            passed: ShortcutNavigator.stepDown(currentIndex: 99, visibleCount: 5) == 4
+            name: "stepDown wraps when currentIndex is out-of-bounds large",
+            passed: ShortcutNavigator.stepDown(currentIndex: 99, visibleCount: 5) == 0
         )
         report(
             name: "stepDown on empty list returns nil",
@@ -635,12 +635,12 @@ public struct SearchNavigationAdversarialHarness {
                      ShortcutNavigator.stepUp(currentIndex: 1, visibleCount: 5) == 0)
         )
         report(
-            name: "stepUp from index 0 returns nil (restores search bar focus)",
-            passed: ShortcutNavigator.stepUp(currentIndex: 0, visibleCount: 5) == nil
+            name: "stepUp from index 0 wraps to visibleCount - 1 (index 4)",
+            passed: ShortcutNavigator.stepUp(currentIndex: 0, visibleCount: 5) == 4
         )
         report(
-            name: "stepUp from nil remains nil",
-            passed: ShortcutNavigator.stepUp(currentIndex: nil, visibleCount: 5) == nil
+            name: "stepUp from nil selects visibleCount - 1 (index 4)",
+            passed: ShortcutNavigator.stepUp(currentIndex: nil, visibleCount: 5) == 4
         )
         report(
             name: "stepUp on empty list returns nil",

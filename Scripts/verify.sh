@@ -90,6 +90,7 @@ SWIFT_FILES=(
     "$PROJECT_ROOT/Tests/SuperClipTests/PairwiseTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/WorkloadTests.swift"
     "$PROJECT_ROOT/Tests/SuperClipTests/AutoPasteTests.swift"
+    "$PROJECT_ROOT/Tests/SuperClipTests/ShortcutNavigatorTests.swift"
     "$PROJECT_ROOT/Tests/VerificationRunner/main.swift"
 )
 

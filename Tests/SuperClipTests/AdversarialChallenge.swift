@@ -689,7 +689,11 @@ public struct AdversarialChallengeRunner {
                 }
             }
             dGroup.wait()
-            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            var drained = false
+            DispatchQueue.main.async { drained = true }
+            while !drained {
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01))
+            }
             if stressPanel.isVisible || stressPanel.hasActiveMonitors {
                 dismissAllPassed = false
             }
