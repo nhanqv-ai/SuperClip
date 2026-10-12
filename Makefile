@@ -31,6 +31,8 @@ LIPO = lipo
 # Architecture targets (Universal 2: Apple Silicon arm64 + Intel x86_64)
 TARGET_ARM64 = arm64-apple-macos13.0
 TARGET_X86_64 = x86_64-apple-macos13.0
+HOST_ARCH = $(shell uname -m)
+TARGET_HOST = $(HOST_ARCH)-apple-macos13.0
 
 # Source file discovery
 CORE_SRCS = $(shell find Sources/SuperClipCore -name '*.swift' 2>/dev/null)
@@ -229,7 +231,7 @@ icon: $(BUILD_DIR)/Resources/AppIcon.icns
 $(BUILD_DIR)/Resources/AppIcon.icns: Scripts/generate_icon.swift
 	@mkdir -p $(BUILD_DIR)/Resources $(BUILD_DIR)/bin
 	@echo "Generating SuperClip AppIcon.icns..."
-	$(SWIFTC) $(SWIFTC_FLAGS_COMMON) -target $(TARGET_ARM64) Scripts/generate_icon.swift -o $(BUILD_DIR)/bin/generate_icon
+	$(SWIFTC) $(SWIFTC_FLAGS_COMMON) -target $(TARGET_HOST) Scripts/generate_icon.swift -o $(BUILD_DIR)/bin/generate_icon
 	$(BUILD_DIR)/bin/generate_icon $@
 	@echo "AppIcon generation complete: $@"
 
@@ -335,5 +337,5 @@ adversarial: build
 # Clean Artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR) $(BUNDLE_NAME) SuperClip-*.zip .verifier_bin .adversarial_runner /tmp/SuperClip_*
+	@rm -rf $(BUILD_DIR) $(BUNDLE_NAME) SuperClip-*.zip .verifier_bin* .adversarial_runner* .m2_adversarial_bin* .tier5_2_stress_runner* /tmp/SuperClip_*
 	@echo "Clean completed."

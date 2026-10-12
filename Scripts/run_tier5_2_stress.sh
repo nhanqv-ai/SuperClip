@@ -4,7 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+if [ -d "/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk" ]; then
+    export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk"
+elif [ -d "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" ]; then
+    export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+else
+    export SDKROOT="$(xcrun --show-sdk-path)"
+fi
 
 # Ensure debug libraries and app bundle are built
 make -C "$PROJECT_ROOT" build
@@ -13,9 +19,11 @@ make -C "$PROJECT_ROOT" app
 RUNNER_SRC="$PROJECT_ROOT/Scripts/challenger_tier5_2_stress_runner.swift"
 RUNNER_BIN="$PROJECT_ROOT/.tier5_2_stress_runner"
 
+HOST_ARCH="$(uname -m)"
+
 echo "Compiling Tier 5 Challenger Stress Runner..."
 swiftc -sdk "$SDKROOT" \
-    -target arm64-apple-macos13.0 \
+    -target "${HOST_ARCH}-apple-macos13.0" \
     -I "$PROJECT_ROOT/.build/modules" \
     -L "$PROJECT_ROOT/.build/lib" \
     -lSuperClipCore \

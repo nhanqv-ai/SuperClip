@@ -233,6 +233,24 @@ kill -TERM "$APP_PID" 2>/dev/null || kill "$APP_PID" 2>/dev/null
 wait "$APP_PID" 2>/dev/null || true
 echo "SuperClip process terminated cleanly on SIGTERM."
 
+if [ "$(uname -m)" = "arm64" ] && arch -x86_64 /usr/bin/true 2>/dev/null; then
+    echo "Validating x86_64 architecture headless launch under Rosetta 2..."
+    arch -x86_64 "$MACOS_BIN" > "$ISOLATED_DIR/stdout_x86.log" 2> "$ISOLATED_DIR/stderr_x86.log" &
+    APP_PID_X86=$!
+    sleep 1.0
+    if ! kill -0 "$APP_PID_X86" 2>/dev/null; then
+        echo "FAILED: SuperClip x86_64 slice exited prematurely upon headless launch"
+        if [ -s "$ISOLATED_DIR/stderr_x86.log" ]; then
+            cat "$ISOLATED_DIR/stderr_x86.log"
+        fi
+        exit 1
+    fi
+    echo "SuperClip x86_64 process (PID $APP_PID_X86) running cleanly without dynamic linker errors."
+    kill -TERM "$APP_PID_X86" 2>/dev/null || kill "$APP_PID_X86" 2>/dev/null
+    wait "$APP_PID_X86" 2>/dev/null || true
+    echo "SuperClip x86_64 process terminated cleanly on SIGTERM."
+fi
+
 cd "$PROJECT_ROOT"
 trap - EXIT
 rm -rf "$ISOLATED_DIR"

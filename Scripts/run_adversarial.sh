@@ -18,8 +18,10 @@ make -C "$PROJECT_ROOT" build
 ADVERSARIAL_SRC="$PROJECT_ROOT/Tests/SuperClipTests/AdversarialChallenge.swift"
 ADVERSARIAL_BIN="$PROJECT_ROOT/.adversarial_runner"
 
+HOST_ARCH="$(uname -m)"
+
 swiftc -sdk "$SDKROOT" \
-    -target arm64-apple-macos13.0 \
+    -target "${HOST_ARCH}-apple-macos13.0" \
     -I "$PROJECT_ROOT/.build/modules" \
     -L "$PROJECT_ROOT/.build/lib" \
     -lSuperClipCore \

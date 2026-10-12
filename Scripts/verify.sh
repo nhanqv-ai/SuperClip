@@ -92,8 +92,10 @@ SWIFT_FILES=(
 
 VERIFIER_BIN="$PROJECT_ROOT/.verifier_bin"
 
+HOST_ARCH="$(uname -m)"
+
 swiftc -sdk "$SDKROOT" \
-    -target arm64-apple-macos13.0 \
+    -target "${HOST_ARCH}-apple-macos13.0" \
     -I "$PROJECT_ROOT/.build/modules" \
     -L "$PROJECT_ROOT/.build/lib" \
     -lSuperClipCore \
