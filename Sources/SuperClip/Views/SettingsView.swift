@@ -475,9 +475,8 @@ public struct SettingsView: View {
                                 .font(.system(size: 10.5))
 
                                 Button(LocalizationManager.shared.tr(.grantPermissionButton)) {
-                                    autoPasteService.openAccessibilitySettings()
-                                    _ = autoPasteService.requestAccessibilityPermission()
-                                    for delay in [0.5, 1.0, 2.0] {
+                                    _ = autoPasteService.resetAndRequestAccessibilityPermission()
+                                    for delay in [0.5, 1.0, 2.0, 3.0] {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                                             refreshAccessibilityStatus()
                                         }

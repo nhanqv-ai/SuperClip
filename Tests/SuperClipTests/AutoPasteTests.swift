@@ -46,6 +46,8 @@ public final class MockAutoPasteService: AutoPasteServicing, @unchecked Sendable
     public var isAccessibilityTrusted: Bool = true
     public var checkPermissionCallCount: Int = 0
     public var requestPermissionCallCount: Int = 0
+    public var resetPermissionCallCount: Int = 0
+    public var resetAndRequestCallCount: Int = 0
     public var openSettingsCallCount: Int = 0
     public var pasteToActiveAppCalls: [(targetApp: NSRunningApplication?, delay: TimeInterval)] = []
 
@@ -61,6 +63,18 @@ public final class MockAutoPasteService: AutoPasteServicing, @unchecked Sendable
     public func requestAccessibilityPermission() -> Bool {
         requestPermissionCallCount += 1
         return isAccessibilityTrusted
+    }
+
+    public func resetAccessibilityPermission() -> Bool {
+        resetPermissionCallCount += 1
+        return true
+    }
+
+    public func resetAndRequestAccessibilityPermission() -> Bool {
+        resetAndRequestCallCount += 1
+        _ = resetAccessibilityPermission()
+        openAccessibilitySettings()
+        return requestAccessibilityPermission()
     }
 
     public func openAccessibilitySettings() {
@@ -136,6 +150,8 @@ public struct AutoPasteTests {
         testClipboardActionCoordinatorImageAutoPasteSuccess(sandboxDir: sandboxDir)
         testClipboardActionCoordinatorImageAutoPasteFailureOnMissingData(sandboxDir: sandboxDir)
         testPasteSimulatingProtocolExtensionNonCircular()
+        testAutoPasteServiceResetAccessibilityPermission()
+        testAutoPasteServiceResetAndRequestSequence()
     }
 
     // MARK: - 1. AppSettings Serialization
@@ -713,5 +729,57 @@ public struct AutoPasteTests {
         let success = customSim.postPasteKeyEvent()
         TestHarness.assertTrue(success, "Protocol extension postPasteKeyEvent succeeds without recursion")
         TestHarness.assertEqual(customSim.postTapCallCount, 1, "Dispatched directly to postPasteKeyEvent(tap:)")
+    }
+
+    // MARK: - 21. AutoPasteService Reset Accessibility Permission
+
+    private static func testAutoPasteServiceResetAccessibilityPermission() {
+        var resetCalled = false
+        let service = AutoPasteService(
+            accessibilityResetter: {
+                resetCalled = true
+                return true
+            }
+        )
+
+        let success = service.resetAccessibilityPermission()
+        TestHarness.assertTrue(success, "resetAccessibilityPermission returns true on success")
+        TestHarness.assertTrue(resetCalled, "accessibilityResetter invoked by resetAccessibilityPermission")
+    }
+
+    // MARK: - 22. AutoPasteService Reset And Request Sequence
+
+    private static func testAutoPasteServiceResetAndRequestSequence() {
+        var resetCalled = false
+        var settingsOpened = false
+        var promptCalled = false
+
+        let service = AutoPasteService(
+            accessibilityChecker: { false },
+            accessibilityPrompter: {
+                promptCalled = true
+                return false
+            },
+            accessibilityResetter: {
+                resetCalled = true
+                return true
+            },
+            settingsOpener: {
+                settingsOpened = true
+            }
+        )
+
+        let promptRes = service.resetAndRequestAccessibilityPermission()
+        TestHarness.assertFalse(promptRes, "resetAndRequestAccessibilityPermission returns prompter result")
+        TestHarness.assertTrue(resetCalled, "TCC reset invoked in resetAndRequest sequence")
+        TestHarness.assertTrue(settingsOpened, "System Settings opened in resetAndRequest sequence")
+        TestHarness.assertTrue(promptCalled, "System prompt requested in resetAndRequest sequence")
+
+        // Also test MockAutoPasteService
+        let mockService = MockAutoPasteService()
+        _ = mockService.resetAndRequestAccessibilityPermission()
+        TestHarness.assertEqual(mockService.resetPermissionCallCount, 1, "Mock resetPermissionCallCount incremented")
+        TestHarness.assertEqual(mockService.openSettingsCallCount, 1, "Mock openSettingsCallCount incremented")
+        TestHarness.assertEqual(mockService.requestPermissionCallCount, 1, "Mock requestPermissionCallCount incremented")
     }
 }

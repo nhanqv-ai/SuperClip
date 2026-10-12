@@ -88,6 +88,10 @@ public protocol AutoPasteServicing: AnyObject {
     var isAccessibilityTrusted: Bool { get }
     func checkAccessibilityPermission() -> Bool
     func requestAccessibilityPermission() -> Bool
+    @discardableResult
+    func resetAccessibilityPermission() -> Bool
+    @discardableResult
+    func resetAndRequestAccessibilityPermission() -> Bool
     func openAccessibilitySettings()
     @discardableResult
     func pasteToActiveApp(
@@ -122,18 +126,31 @@ public final class AutoPasteService: AutoPasteServicing, @unchecked Sendable {
     public var pasteSimulator: any PasteSimulating
     public var accessibilityChecker: () -> Bool
     public var accessibilityPrompter: () -> Bool
+    public var accessibilityResetter: () -> Bool
     public var settingsOpener: () -> Void
     public var dispatchQueue: DispatchQueue
 
     public init(
         pasteSimulator: any PasteSimulating = PasteSimulator.shared,
         accessibilityChecker: @escaping () -> Bool = {
-            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
-            return AXIsProcessTrustedWithOptions(options)
+            return AXIsProcessTrusted()
         },
         accessibilityPrompter: @escaping () -> Bool = {
             let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
             return AXIsProcessTrustedWithOptions(options)
+        },
+        accessibilityResetter: @escaping () -> Bool = {
+            let bundleId = Bundle.main.bundleIdentifier ?? "com.superclip.SuperClip"
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+            process.arguments = ["reset", "Accessibility", bundleId]
+            do {
+                try process.run()
+                process.waitUntilExit()
+                return process.terminationStatus == 0
+            } catch {
+                return false
+            }
         },
         settingsOpener: @escaping () -> Void = {
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"),
@@ -149,6 +166,7 @@ public final class AutoPasteService: AutoPasteServicing, @unchecked Sendable {
         self.pasteSimulator = pasteSimulator
         self.accessibilityChecker = accessibilityChecker
         self.accessibilityPrompter = accessibilityPrompter
+        self.accessibilityResetter = accessibilityResetter
         self.settingsOpener = settingsOpener
         self.dispatchQueue = dispatchQueue
     }
@@ -166,6 +184,24 @@ public final class AutoPasteService: AutoPasteServicing, @unchecked Sendable {
     /// Triggers the system accessibility permission prompt dialog.
     public func requestAccessibilityPermission() -> Bool {
         return accessibilityPrompter()
+    }
+
+    /// Resets the TCC accessibility approval cache for this application bundle.
+    /// Essential on macOS Ventura and Sonoma when updating ad-hoc signed apps,
+    /// because TCC caches permissions against binary CDHashes. If an earlier build was registered,
+    /// System Settings retains a stale entry that prevents the new binary from being recognized.
+    @discardableResult
+    public func resetAccessibilityPermission() -> Bool {
+        return accessibilityResetter()
+    }
+
+    /// Flushes any stale TCC cache entry for SuperClip, opens System Settings -> Accessibility,
+    /// and triggers a fresh system authorization prompt for the current binary.
+    @discardableResult
+    public func resetAndRequestAccessibilityPermission() -> Bool {
+        _ = resetAccessibilityPermission()
+        openAccessibilitySettings()
+        return requestAccessibilityPermission()
     }
 
     /// Opens macOS System Settings directly to Privacy & Security -> Accessibility.

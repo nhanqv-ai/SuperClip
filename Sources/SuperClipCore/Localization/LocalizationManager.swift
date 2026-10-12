@@ -640,14 +640,14 @@ public enum L10nKey: Sendable {
 
         case .accessibilityToggleTip:
             switch lang {
-            case .vietnamese: return "Mẹo: Nếu trong Cài đặt hệ thống đã bật mà ứng dụng chưa nhận, vui lòng gạt Tắt rồi Bật lại cho SuperClip để làm mới quyền."
-            case .simplifiedChinese: return "提示：如果系统设置中已开启但仍未识别，请先关闭再重新开启 SuperClip 的权限以刷新。"
-            case .japanese: return "ヒント：システム設定で既に有効になっている場合は、一度オフにしてから再度オンにして権限を更新してください。"
-            case .korean: return "팁: 시스템 설정에서 이미 활성화되어 있는 경우 SuperClip을 껐다가 다시 켜서 권한을 새로고침하세요."
-            case .spanish: return "Consejo: Si ya está habilitado en Configuración del Sistema, desactívelo y vuelva a activarlo para actualizar los permisos."
-            case .french: return "Astuce : Si déjà activé dans Réglages Système, désactivez puis réactivez SuperClip pour rafraîchir les autorisations."
-            case .german: return "Tipp: Wenn in den Systemeinstellungen bereits aktiviert, schalten Sie SuperClip aus und wieder ein, um die Berechtigung zu aktualisieren."
-            default: return "Tip: If already enabled in System Settings, toggle SuperClip OFF then ON to refresh permissions."
+            case .vietnamese: return "Mẹo: Nếu trong Cài đặt hệ thống đã bật mà ứng dụng chưa nhận, hãy chọn SuperClip và nhấn nút dấu trừ (-) ở dưới danh sách để xóa mục cũ, sau đó bấm 'Cấp quyền...' để macOS nhận diện bản mới."
+            case .simplifiedChinese: return "提示：如果系统设置中已开启但仍未识别，请在列表中选中 SuperClip 并点击下方的减号 (-) 按钮将其移除，然后重新点击“授予权限...”以绑定新版本。"
+            case .japanese: return "ヒント：システム設定で既に有効になっているにもかかわらず認識されない場合は、リストから SuperClip を選択して下部のマイナス (-) ボタンで削除し、再度「権限を付与...」をクリックしてください。"
+            case .korean: return "팁: 시스템 설정에서 이미 활성화되어 있는데도 인식되지 않는 경우, 목록에서 SuperClip을 선택하고 하단의 빼기(-) 버튼을 눌러 삭제한 뒤 '권한 허용...'을 다시 클릭하세요."
+            case .spanish: return "Consejo: Si ya está habilitado en Configuración del Sistema pero no se reconoce, seleccione SuperClip y haga clic en el botón menos (-) para eliminarlo, luego vuelva a otorgar permiso."
+            case .french: return "Astuce : Si déjà activé dans Réglages Système mais non reconnu, sélectionnez SuperClip et cliquez sur le bouton moins (-) pour le supprimer, puis accordez à nouveau l'autorisation."
+            case .german: return "Tipp: Wenn in den Systemeinstellungen bereits aktiviert, wählen Sie SuperClip aus und klicken Sie unten auf die Minus-Taste (-), um den Eintrag zu entfernen, und erteilen Sie die Berechtigung erneut."
+            default: return "Tip: If already enabled in System Settings but not recognized, select SuperClip and click the minus (-) button below the list to remove the old entry, then click 'Grant Permission...' so macOS binds to this version."
             }
 
         case .grantPermissionButton:

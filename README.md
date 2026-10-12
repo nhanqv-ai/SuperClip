@@ -61,7 +61,7 @@
 ### Installation
 
 #### Pre-built Release
-1. Download the latest `SuperClip-v1.0.5.zip` from [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
+1. Download the latest `SuperClip-v1.0.6.zip` from [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
 2. Unzip and drag `SuperClip.app` into your `/Applications` folder.
 3. Open `SuperClip.app`. An icon will appear on your macOS menu bar.
 
@@ -71,6 +71,10 @@
 > - **Terminal (Recommended)**: Run `xattr -cr /Applications/SuperClip.app` (or on the unzipped path).
 > - **System Settings**: Go to **System Settings** -> **Privacy & Security** -> click **Open Anyway**.
 > - **Finder**: Right-click `SuperClip.app` -> choose **Open** -> click **Open**.
+
+> [!TIP]
+> **Accessibility Permission (Direct Auto-Paste)**:
+> If direct auto-paste is enabled, macOS requires Accessibility permission. If SuperClip was previously installed and System Settings retains a stale cache, click "Grant Permission..." in SuperClip (which flushes stale TCC entries), or in **System Settings** -> **Privacy & Security** -> **Accessibility**, select SuperClip and click the minus (`-`) button to remove the old entry, then grant permission again.
 
 #### Build from Source
 ```bash
@@ -141,7 +145,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Hướng dẫn cài đặt
 
 #### Tải bản đóng gói sẵn
-1. Tải bản phát hành mới nhất `SuperClip-v1.0.5.zip` tại mục [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
+1. Tải bản phát hành mới nhất `SuperClip-v1.0.6.zip` tại mục [Releases](https://github.com/nhanqv-ai/SuperClip/releases).
 2. Giải nén và kéo file `SuperClip.app` vào thư mục `/Applications` (Ứng dụng).
 3. Mở `SuperClip.app`. Biểu tượng ứng dụng sẽ xuất hiện trên thanh menu macOS.
 
@@ -151,6 +155,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 > - **Dùng Terminal (Nhanh nhất)**: Chạy lệnh `xattr -cr /Applications/SuperClip.app` (hoặc đường dẫn file vừa giải nén).
 > - **Dùng Cài đặt hệ thống**: Vào **System Settings** -> **Privacy & Security** -> cuộn xuống mục **Security** -> chọn **Open Anyway** (Vẫn mở).
 > - **Dùng chuột phải**: Nhấp chuột phải (hoặc giữ phím `Control` + click) vào `SuperClip.app` -> chọn **Open** (Mở) -> chọn **Open**.
+
+> [!TIP]
+> **Cấp quyền Trợ năng (Tự động dán - Direct Auto-Paste)**:
+> Để SuperClip tự động dán trực tiếp, macOS yêu cầu quyền Trợ năng (Accessibility). Nếu bạn đã cài bản trước đó và Cài đặt hệ thống lưu cache cũ, hãy bấm nút "Cấp quyền..." trong SuperClip (tự động xóa cache TCC cũ), hoặc vào **Cài đặt hệ thống** -> **Quyền riêng tư & Bảo mật** -> **Trợ năng**, chọn `SuperClip` và nhấn nút dấu trừ (`-`) để xóa mục cũ, sau đó cấp quyền lại.
 
 #### Biên dịch từ mã nguồn
 ```bash
