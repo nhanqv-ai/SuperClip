@@ -3,7 +3,7 @@ import AppKit
 import Combine
 import UserNotifications
 
-/// Representation of a parsed semantic version (e.g. v1.0.1, 1.0.0, 1.0.0-beta.1).
+/// Representation of a parsed semantic version (e.g. v1.0.2, 1.0.0, 1.0.0-beta.1).
 public struct SemanticVersion: Comparable, Equatable, Sendable {
     public let components: [Int]
     public let prerelease: String?
@@ -177,7 +177,7 @@ public final class UpdateManager: ObservableObject, @unchecked Sendable {
     private var _customVersion: String? = nil
     public var currentVersion: String {
         get {
-            _customVersion ?? (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.1")
+            _customVersion ?? (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.2")
         }
         set {
             _customVersion = newValue

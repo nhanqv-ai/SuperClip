@@ -11,7 +11,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+if [ -d "/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk" ]; then
+    export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk"
+elif [ -d "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" ]; then
+    export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+else
+    export SDKROOT="$(xcrun --show-sdk-path)"
+fi
 
 echo "=================================================="
 echo "  SuperClip Test Suite Verification"
@@ -32,7 +38,7 @@ python3 "$PROJECT_ROOT/Scripts/lint_emojis.py" \
 # Step 2: Ensure Core Library Artifacts Exist
 echo ""
 echo "--- Step 2: Ensuring SuperClipCore Library is Built ---"
-if [ ! -f "$PROJECT_ROOT/.build/lib/libSuperClipCore.dylib" ] || [ ! -f "$PROJECT_ROOT/.build/modules/SuperClipCore.swiftmodule" ]; then
+if [ ! -f "$PROJECT_ROOT/.build/lib/libSuperClipCore.dylib" ] || [ ! -e "$PROJECT_ROOT/.build/modules/SuperClipCore.swiftmodule" ]; then
     echo "SuperClipCore library artifacts not found. Building..."
     make -C "$PROJECT_ROOT" build
 fi

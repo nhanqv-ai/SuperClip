@@ -4,7 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+if [ -d "/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk" ]; then
+    export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk"
+elif [ -d "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk" ]; then
+    export SDKROOT="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+else
+    export SDKROOT="$(xcrun --show-sdk-path)"
+fi
 
 # Ensure core library is built
 make -C "$PROJECT_ROOT" build

@@ -11,11 +11,13 @@ FRAMEWORKS_DIR = $(BUNDLE_DIR)/Frameworks
 RESOURCES_DIR = $(BUNDLE_DIR)/Resources
 BUILD_DIR = .build
 
-# Detect or default matching SDK
-ifeq ($(wildcard /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk),)
-    SDK_PATH := $(shell xcrun --show-sdk-path)
-else
+# Detect or select a valid SDK supporting both arm64 and x86_64
+ifneq ($(wildcard /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk),)
+    SDK_PATH := /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk
+else ifneq ($(wildcard /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk),)
     SDK_PATH := /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+else
+    SDK_PATH := $(shell xcrun --show-sdk-path)
 endif
 export SDKROOT := $(SDK_PATH)
 
@@ -24,6 +26,11 @@ SWIFT = swift
 PYTHON = python3
 CODESIGN = codesign
 INSTALL_NAME_TOOL = install_name_tool
+LIPO = lipo
+
+# Architecture targets (Universal 2: Apple Silicon arm64 + Intel x86_64)
+TARGET_ARM64 = arm64-apple-macos13.0
+TARGET_X86_64 = x86_64-apple-macos13.0
 
 # Source file discovery
 CORE_SRCS = $(shell find Sources/SuperClipCore -name '*.swift' 2>/dev/null)
@@ -31,7 +38,7 @@ APP_SRCS  = $(shell find Sources/SuperClip -name '*.swift' 2>/dev/null)
 ALL_SRCS  = $(CORE_SRCS) $(APP_SRCS)
 
 # Compiler flags
-SWIFTC_FLAGS_COMMON = -sdk $(SDKROOT) -target arm64-apple-macos13.0
+SWIFTC_FLAGS_COMMON = -sdk $(SDKROOT)
 SWIFTC_FLAGS_DEBUG  = $(SWIFTC_FLAGS_COMMON) -g -Onone
 SWIFTC_FLAGS_RELEASE= $(SWIFTC_FLAGS_COMMON) -O -whole-module-optimization
 
@@ -54,81 +61,165 @@ help:
 	@echo "  make adversarial - Run adversarial stress test suite"
 	@echo "  make clean       - Remove build artifacts and app bundle"
 
-# Compile Debug Binary / Module
+# Compile Debug Binary / Module (Universal 2: arm64 + x86_64)
 build: lint
-	@mkdir -p $(BUILD_DIR)/modules $(BUILD_DIR)/lib $(BUILD_DIR)/bin
-	@echo "Compiling SuperClipCore (Debug)..."
-	$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) \
+	@if [ -f $(BUILD_DIR)/modules/SuperClipCore.swiftmodule ]; then rm -f $(BUILD_DIR)/modules/SuperClipCore.swiftmodule; fi
+	@if [ -f $(BUILD_DIR)/modules/SuperClip.swiftmodule ]; then rm -f $(BUILD_DIR)/modules/SuperClip.swiftmodule; fi
+	@mkdir -p $(BUILD_DIR)/modules/SuperClipCore.swiftmodule $(BUILD_DIR)/modules/SuperClip.swiftmodule
+	@mkdir -p $(BUILD_DIR)/lib/arm64 $(BUILD_DIR)/lib/x86_64 $(BUILD_DIR)/bin/arm64 $(BUILD_DIR)/bin/x86_64
+	@echo "Compiling SuperClipCore slices (Debug)..."
+	$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) -target $(TARGET_ARM64) \
 		-emit-library \
-		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule \
+		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule/arm64-apple-macos.swiftmodule \
 		-module-name SuperClipCore \
 		-parse-as-library \
 		-Xlinker -install_name -Xlinker @rpath/libSuperClipCore.dylib \
 		$(CORE_SRCS) \
-		-o $(BUILD_DIR)/lib/libSuperClipCore.dylib
+		-o $(BUILD_DIR)/lib/arm64/libSuperClipCore.dylib
+	$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) -target $(TARGET_X86_64) \
+		-emit-library \
+		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule/x86_64-apple-macos.swiftmodule \
+		-module-name SuperClipCore \
+		-parse-as-library \
+		-Xlinker -install_name -Xlinker @rpath/libSuperClipCore.dylib \
+		$(CORE_SRCS) \
+		-o $(BUILD_DIR)/lib/x86_64/libSuperClipCore.dylib
+	@echo "Merging SuperClipCore dynamic library with lipo..."
+	$(LIPO) -create -output $(BUILD_DIR)/lib/libSuperClipCore.dylib \
+		$(BUILD_DIR)/lib/arm64/libSuperClipCore.dylib \
+		$(BUILD_DIR)/lib/x86_64/libSuperClipCore.dylib
 	@if [ -n "$(APP_SRCS)" ]; then \
-		echo "Compiling SuperClip module (Debug)..."; \
-		$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) \
+		echo "Compiling SuperClip module slices (Debug)..."; \
+		$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) -target $(TARGET_ARM64) \
 			-emit-library \
-			-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClip.swiftmodule \
+			-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClip.swiftmodule/arm64-apple-macos.swiftmodule \
 			-module-name SuperClip \
 			-parse-as-library \
 			-I $(BUILD_DIR)/modules \
-			-L $(BUILD_DIR)/lib \
+			-L $(BUILD_DIR)/lib/arm64 \
 			-lSuperClipCore \
 			-Xlinker -install_name -Xlinker @rpath/libSuperClip.dylib \
 			$(APP_SRCS) \
-			-o $(BUILD_DIR)/lib/libSuperClip.dylib; \
+			-o $(BUILD_DIR)/lib/arm64/libSuperClip.dylib; \
+		$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) -target $(TARGET_X86_64) \
+			-emit-library \
+			-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClip.swiftmodule/x86_64-apple-macos.swiftmodule \
+			-module-name SuperClip \
+			-parse-as-library \
+			-I $(BUILD_DIR)/modules \
+			-L $(BUILD_DIR)/lib/x86_64 \
+			-lSuperClipCore \
+			-Xlinker -install_name -Xlinker @rpath/libSuperClip.dylib \
+			$(APP_SRCS) \
+			-o $(BUILD_DIR)/lib/x86_64/libSuperClip.dylib; \
+		echo "Merging SuperClip module library with lipo..."; \
+		$(LIPO) -create -output $(BUILD_DIR)/lib/libSuperClip.dylib \
+			$(BUILD_DIR)/lib/arm64/libSuperClip.dylib \
+			$(BUILD_DIR)/lib/x86_64/libSuperClip.dylib; \
 	fi
 	@if [ -n "$(APP_SRCS)" ] && grep -r -q '@main' Sources/SuperClip 2>/dev/null; then \
-		echo "Compiling $(APP_NAME) (Debug)..."; \
-		$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) \
+		echo "Compiling $(APP_NAME) executable slices (Debug)..."; \
+		$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) -target $(TARGET_ARM64) \
 			-I $(BUILD_DIR)/modules \
-			-L $(BUILD_DIR)/lib \
+			-L $(BUILD_DIR)/lib/arm64 \
 			-lSuperClipCore \
 			-Xlinker -rpath -Xlinker $(BUILD_DIR)/lib \
 			-parse-as-library \
 			$(APP_SRCS) \
-			-o $(BUILD_DIR)/bin/$(APP_NAME); \
+			-o $(BUILD_DIR)/bin/arm64/$(APP_NAME); \
+		$(SWIFTC) $(SWIFTC_FLAGS_DEBUG) -target $(TARGET_X86_64) \
+			-I $(BUILD_DIR)/modules \
+			-L $(BUILD_DIR)/lib/x86_64 \
+			-lSuperClipCore \
+			-Xlinker -rpath -Xlinker $(BUILD_DIR)/lib \
+			-parse-as-library \
+			$(APP_SRCS) \
+			-o $(BUILD_DIR)/bin/x86_64/$(APP_NAME); \
+		echo "Merging $(APP_NAME) executable with lipo..."; \
+		$(LIPO) -create -output $(BUILD_DIR)/bin/$(APP_NAME) \
+			$(BUILD_DIR)/bin/arm64/$(APP_NAME) \
+			$(BUILD_DIR)/bin/x86_64/$(APP_NAME); \
 	fi
 	@echo "Build complete."
 
-# Compile Release Binary / Module
+# Compile Release Binary / Module (Universal 2: arm64 + x86_64)
 release: lint
-	@mkdir -p $(BUILD_DIR)/modules $(BUILD_DIR)/lib $(BUILD_DIR)/bin
-	@echo "Compiling SuperClipCore (Release)..."
-	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) \
+	@if [ -f $(BUILD_DIR)/modules/SuperClipCore.swiftmodule ]; then rm -f $(BUILD_DIR)/modules/SuperClipCore.swiftmodule; fi
+	@if [ -f $(BUILD_DIR)/modules/SuperClip.swiftmodule ]; then rm -f $(BUILD_DIR)/modules/SuperClip.swiftmodule; fi
+	@mkdir -p $(BUILD_DIR)/modules/SuperClipCore.swiftmodule $(BUILD_DIR)/modules/SuperClip.swiftmodule
+	@mkdir -p $(BUILD_DIR)/lib/arm64 $(BUILD_DIR)/lib/x86_64 $(BUILD_DIR)/bin/arm64 $(BUILD_DIR)/bin/x86_64
+	@echo "Compiling SuperClipCore slices (Release)..."
+	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_ARM64) \
 		-emit-library \
-		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule \
+		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule/arm64-apple-macos.swiftmodule \
 		-module-name SuperClipCore \
 		-parse-as-library \
 		-Xlinker -install_name -Xlinker @rpath/libSuperClipCore.dylib \
 		$(CORE_SRCS) \
-		-o $(BUILD_DIR)/lib/libSuperClipCore.dylib
+		-o $(BUILD_DIR)/lib/arm64/libSuperClipCore.dylib
+	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_X86_64) \
+		-emit-library \
+		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule/x86_64-apple-macos.swiftmodule \
+		-module-name SuperClipCore \
+		-parse-as-library \
+		-Xlinker -install_name -Xlinker @rpath/libSuperClipCore.dylib \
+		$(CORE_SRCS) \
+		-o $(BUILD_DIR)/lib/x86_64/libSuperClipCore.dylib
+	@echo "Merging SuperClipCore dynamic library with lipo..."
+	$(LIPO) -create -output $(BUILD_DIR)/lib/libSuperClipCore.dylib \
+		$(BUILD_DIR)/lib/arm64/libSuperClipCore.dylib \
+		$(BUILD_DIR)/lib/x86_64/libSuperClipCore.dylib
 	@if [ -n "$(APP_SRCS)" ]; then \
-		echo "Compiling SuperClip module (Release)..."; \
-		$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) \
+		echo "Compiling SuperClip module slices (Release)..."; \
+		$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_ARM64) \
 			-emit-library \
-			-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClip.swiftmodule \
+			-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClip.swiftmodule/arm64-apple-macos.swiftmodule \
 			-module-name SuperClip \
 			-parse-as-library \
 			-I $(BUILD_DIR)/modules \
-			-L $(BUILD_DIR)/lib \
+			-L $(BUILD_DIR)/lib/arm64 \
 			-lSuperClipCore \
 			-Xlinker -install_name -Xlinker @rpath/libSuperClip.dylib \
 			$(APP_SRCS) \
-			-o $(BUILD_DIR)/lib/libSuperClip.dylib; \
+			-o $(BUILD_DIR)/lib/arm64/libSuperClip.dylib; \
+		$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_X86_64) \
+			-emit-library \
+			-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClip.swiftmodule/x86_64-apple-macos.swiftmodule \
+			-module-name SuperClip \
+			-parse-as-library \
+			-I $(BUILD_DIR)/modules \
+			-L $(BUILD_DIR)/lib/x86_64 \
+			-lSuperClipCore \
+			-Xlinker -install_name -Xlinker @rpath/libSuperClip.dylib \
+			$(APP_SRCS) \
+			-o $(BUILD_DIR)/lib/x86_64/libSuperClip.dylib; \
+		echo "Merging SuperClip module library with lipo..."; \
+		$(LIPO) -create -output $(BUILD_DIR)/lib/libSuperClip.dylib \
+			$(BUILD_DIR)/lib/arm64/libSuperClip.dylib \
+			$(BUILD_DIR)/lib/x86_64/libSuperClip.dylib; \
 	fi
 	@if [ -n "$(APP_SRCS)" ] && grep -r -q '@main' Sources/SuperClip 2>/dev/null; then \
-		echo "Compiling $(APP_NAME) binary (Release)..."; \
-		$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) \
+		echo "Compiling $(APP_NAME) binary slices (Release)..."; \
+		$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_ARM64) \
 			-I $(BUILD_DIR)/modules \
-			-L $(BUILD_DIR)/lib \
+			-L $(BUILD_DIR)/lib/arm64 \
 			-lSuperClipCore \
 			-Xlinker -rpath -Xlinker $(BUILD_DIR)/lib \
 			-parse-as-library \
 			$(APP_SRCS) \
-			-o $(BUILD_DIR)/bin/$(APP_NAME); \
+			-o $(BUILD_DIR)/bin/arm64/$(APP_NAME); \
+		$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_X86_64) \
+			-I $(BUILD_DIR)/modules \
+			-L $(BUILD_DIR)/lib/x86_64 \
+			-lSuperClipCore \
+			-Xlinker -rpath -Xlinker $(BUILD_DIR)/lib \
+			-parse-as-library \
+			$(APP_SRCS) \
+			-o $(BUILD_DIR)/bin/x86_64/$(APP_NAME); \
+		echo "Merging $(APP_NAME) executable with lipo..."; \
+		$(LIPO) -create -output $(BUILD_DIR)/bin/$(APP_NAME) \
+			$(BUILD_DIR)/bin/arm64/$(APP_NAME) \
+			$(BUILD_DIR)/bin/x86_64/$(APP_NAME); \
 	fi
 	@echo "Release build complete."
 
@@ -138,32 +229,60 @@ icon: $(BUILD_DIR)/Resources/AppIcon.icns
 $(BUILD_DIR)/Resources/AppIcon.icns: Scripts/generate_icon.swift
 	@mkdir -p $(BUILD_DIR)/Resources $(BUILD_DIR)/bin
 	@echo "Generating SuperClip AppIcon.icns..."
-	$(SWIFTC) $(SWIFTC_FLAGS_COMMON) Scripts/generate_icon.swift -o $(BUILD_DIR)/bin/generate_icon
+	$(SWIFTC) $(SWIFTC_FLAGS_COMMON) -target $(TARGET_ARM64) Scripts/generate_icon.swift -o $(BUILD_DIR)/bin/generate_icon
 	$(BUILD_DIR)/bin/generate_icon $@
 	@echo "AppIcon generation complete: $@"
 
-# Standalone Application Bundle Packaging
+# Standalone Application Bundle Packaging (Universal 2: arm64 + x86_64)
 app: lint icon
 	@echo "Packaging SuperClip.app standalone application bundle..."
-	@mkdir -p $(MACOS_DIR) $(FRAMEWORKS_DIR) $(RESOURCES_DIR) $(BUILD_DIR)/modules $(BUILD_DIR)/lib
-	@echo "Compiling SuperClipCore dynamic library..."
-	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) \
+	@mkdir -p $(MACOS_DIR) $(FRAMEWORKS_DIR) $(RESOURCES_DIR)
+	@if [ -f $(BUILD_DIR)/modules/SuperClipCore.swiftmodule ]; then rm -f $(BUILD_DIR)/modules/SuperClipCore.swiftmodule; fi
+	@if [ -f $(BUILD_DIR)/modules/SuperClip.swiftmodule ]; then rm -f $(BUILD_DIR)/modules/SuperClip.swiftmodule; fi
+	@mkdir -p $(BUILD_DIR)/modules/SuperClipCore.swiftmodule $(BUILD_DIR)/modules/SuperClip.swiftmodule
+	@mkdir -p $(BUILD_DIR)/lib/arm64 $(BUILD_DIR)/lib/x86_64 $(BUILD_DIR)/bin/arm64 $(BUILD_DIR)/bin/x86_64
+	@echo "Compiling SuperClipCore dynamic library slices (arm64 + x86_64)..."
+	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_ARM64) \
 		-emit-library \
-		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule \
+		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule/arm64-apple-macos.swiftmodule \
 		-module-name SuperClipCore \
 		-parse-as-library \
 		-Xlinker -install_name -Xlinker @rpath/libSuperClipCore.dylib \
 		$(CORE_SRCS) \
-		-o $(BUILD_DIR)/lib/libSuperClipCore.dylib
-	@echo "Compiling SuperClip standalone executable..."
-	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) \
+		-o $(BUILD_DIR)/lib/arm64/libSuperClipCore.dylib
+	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_X86_64) \
+		-emit-library \
+		-emit-module -emit-module-path $(BUILD_DIR)/modules/SuperClipCore.swiftmodule/x86_64-apple-macos.swiftmodule \
+		-module-name SuperClipCore \
+		-parse-as-library \
+		-Xlinker -install_name -Xlinker @rpath/libSuperClipCore.dylib \
+		$(CORE_SRCS) \
+		-o $(BUILD_DIR)/lib/x86_64/libSuperClipCore.dylib
+	@echo "Merging SuperClipCore dynamic library with lipo..."
+	$(LIPO) -create -output $(BUILD_DIR)/lib/libSuperClipCore.dylib \
+		$(BUILD_DIR)/lib/arm64/libSuperClipCore.dylib \
+		$(BUILD_DIR)/lib/x86_64/libSuperClipCore.dylib
+	@echo "Compiling SuperClip standalone executable slices (arm64 + x86_64)..."
+	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_ARM64) \
 		-I $(BUILD_DIR)/modules \
-		-L $(BUILD_DIR)/lib \
+		-L $(BUILD_DIR)/lib/arm64 \
 		-lSuperClipCore \
 		-parse-as-library \
 		-Xlinker -rpath -Xlinker @executable_path/../Frameworks \
 		$(APP_SRCS) \
-		-o $(MACOS_DIR)/$(APP_NAME)
+		-o $(BUILD_DIR)/bin/arm64/$(APP_NAME)
+	$(SWIFTC) $(SWIFTC_FLAGS_RELEASE) -target $(TARGET_X86_64) \
+		-I $(BUILD_DIR)/modules \
+		-L $(BUILD_DIR)/lib/x86_64 \
+		-lSuperClipCore \
+		-parse-as-library \
+		-Xlinker -rpath -Xlinker @executable_path/../Frameworks \
+		$(APP_SRCS) \
+		-o $(BUILD_DIR)/bin/x86_64/$(APP_NAME)
+	@echo "Merging SuperClip standalone executable with lipo..."
+	$(LIPO) -create -output $(MACOS_DIR)/$(APP_NAME) \
+		$(BUILD_DIR)/bin/arm64/$(APP_NAME) \
+		$(BUILD_DIR)/bin/x86_64/$(APP_NAME)
 	@chmod 755 $(MACOS_DIR)/$(APP_NAME)
 	@echo "Installing dynamic framework into bundle..."
 	@cp -f $(BUILD_DIR)/lib/libSuperClipCore.dylib $(FRAMEWORKS_DIR)/libSuperClipCore.dylib
@@ -216,5 +335,5 @@ adversarial: build
 # Clean Artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR) $(BUNDLE_NAME) .verifier_bin .adversarial_runner /tmp/SuperClip_*
+	@rm -rf $(BUILD_DIR) $(BUNDLE_NAME) SuperClip-*.zip .verifier_bin .adversarial_runner /tmp/SuperClip_*
 	@echo "Clean completed."

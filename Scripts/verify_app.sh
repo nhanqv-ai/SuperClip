@@ -9,7 +9,7 @@ set -euo pipefail
 # Step 3: Info.plist structure, LSUIElement=true, and bundle metadata keys
 # Step 4: PkgInfo 8-byte signature exact match (APPL????)
 # Step 5: Multi-resolution AppIcon.icns asset integrity
-# Step 6: Mach-O 64-bit arm64 architecture and runtime rpath linkage
+# Step 6: Mach-O Universal 2 (arm64 + x86_64) architecture and runtime rpath linkage
 # Step 7: Inside-out ad-hoc code signature verification
 # Step 8: Isolated headless runtime launch and clean SIGTERM termination
 # ==============================================================================
@@ -151,20 +151,22 @@ if ! strings "$APP_ICON" | grep -E 'ic(04|05|07|08|09|10|11|12|13|14)' > /dev/nu
 fi
 echo "AppIcon.icns verified: valid multi-resolution Mac OS X icon ($ICON_SIZE bytes)"
 
-# --- Step 6: Mach-O arm64 Architecture & Linkage Check ---
+# --- Step 6: Mach-O Universal 2 (arm64 + x86_64) Architecture & Linkage Check ---
 echo ""
 echo "--- Step 6: Verifying Mach-O Binary Architecture & Linkage ---"
-if ! file "$MACOS_BIN" | grep -q "Mach-O 64-bit executable arm64"; then
-    echo "ERROR: Executable is not arm64 Mach-O: $(file "$MACOS_BIN")"
+EXE_LIPO=$(lipo -info "$MACOS_BIN" 2>&1)
+if ! echo "$EXE_LIPO" | grep -q "arm64" || ! echo "$EXE_LIPO" | grep -q "x86_64"; then
+    echo "ERROR: Executable is not Universal 2 (missing arm64 or x86_64): $EXE_LIPO"
     exit 1
 fi
-echo "Mach-O arm64 architecture verified."
+echo "Mach-O Universal 2 executable architecture verified ($EXE_LIPO)."
 
-if ! file "$FRAMEWORK_DYLIB" | grep -q "Mach-O 64-bit dynamically linked shared library arm64"; then
-    echo "ERROR: libSuperClipCore.dylib is not arm64 Mach-O: $(file "$FRAMEWORK_DYLIB")"
+DYLIB_LIPO=$(lipo -info "$FRAMEWORK_DYLIB" 2>&1)
+if ! echo "$DYLIB_LIPO" | grep -q "arm64" || ! echo "$DYLIB_LIPO" | grep -q "x86_64"; then
+    echo "ERROR: libSuperClipCore.dylib is not Universal 2 (missing arm64 or x86_64): $DYLIB_LIPO"
     exit 1
 fi
-echo "Framework Mach-O arm64 architecture verified."
+echo "Framework Mach-O Universal 2 architecture verified ($DYLIB_LIPO)."
 
 if ! otool -D "$FRAMEWORK_DYLIB" | grep -q "@rpath/libSuperClipCore.dylib"; then
     echo "ERROR: libSuperClipCore.dylib install name mismatch: $(otool -D "$FRAMEWORK_DYLIB")"
