@@ -486,5 +486,129 @@ public struct UpdateManagerTests {
         } else {
             TestHarness.assertTrue(false, "Expected error status on failed download, got: \(failMgr.status)")
         }
+
+        // =========================================================================
+        // 18. Web Redirect Fallback, ETag 304, Bearer Token & Concurrent Deduplication
+        // =========================================================================
+        let redirectURL = URL(string: "https://github.com/nhanqv-ai/SuperClip/releases/tag/v1.0.6")!
+        let parsedRedirect = UpdateManager.parseReleaseFromWebRedirectURL(redirectURL)
+        TestHarness.assertEqual(parsedRedirect?.tagName, "v1.0.6", "parseReleaseFromWebRedirectURL extracts v1.0.6 tag")
+        TestHarness.assertEqual(
+            parsedRedirect?.zipAssetURL?.absoluteString,
+            "https://github.com/nhanqv-ai/SuperClip/releases/download/v1.0.6/SuperClip-v1.0.6.zip",
+            "parseReleaseFromWebRedirectURL builds canonical zip asset URL"
+        )
+
+        class SuperClipMockProtocol: URLProtocol {
+            static let lock = NSLock()
+            static var requestCount = 0
+            static var lastIfNoneMatch: String?
+            static var lastAuthHeader: String?
+            static var statusCode = 200
+            static var etagHeader: String? = "\"etag-superclip-1.0.6\""
+            static var payload: Data?
+            static var simulateRedirectFallback = false
+
+            override class func canInit(with request: URLRequest) -> Bool { true }
+            override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+            override func startLoading() {
+                Self.lock.lock()
+                Self.requestCount += 1
+                Self.lastIfNoneMatch = request.value(forHTTPHeaderField: "If-None-Match")
+                Self.lastAuthHeader = request.value(forHTTPHeaderField: "Authorization")
+                let code = Self.statusCode
+                let etag = Self.etagHeader
+                let data = Self.payload
+                let fallback = Self.simulateRedirectFallback
+                Self.lock.unlock()
+
+                if fallback && request.url?.host != "api.github.com" {
+                    let redirected = URL(string: "https://github.com/nhanqv-ai/SuperClip/releases/tag/v1.0.6")!
+                    let resp = HTTPURLResponse(
+                        url: redirected,
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: ["Location": redirected.absoluteString]
+                    )!
+                    client?.urlProtocol(self, didReceive: resp, cacheStoragePolicy: .notAllowed)
+                    client?.urlProtocolDidFinishLoading(self)
+                    return
+                }
+
+                var headers: [String: String] = ["Content-Type": "application/json"]
+                if let etag = etag { headers["ETag"] = etag }
+                let resp = HTTPURLResponse(url: request.url!, statusCode: code, httpVersion: nil, headerFields: headers)!
+                client?.urlProtocol(self, didReceive: resp, cacheStoragePolicy: .notAllowed)
+                if code != 304, let data = data {
+                    client?.urlProtocol(self, didLoad: data)
+                }
+                client?.urlProtocolDidFinishLoading(self)
+            }
+            override func stopLoading() {}
+        }
+
+        SuperClipMockProtocol.payload = """
+        {
+            "tag_name": "v1.0.6",
+            "name": "SuperClip v1.0.6",
+            "body": "Notes",
+            "html_url": "https://github.com/nhanqv-ai/SuperClip/releases/tag/v1.0.6",
+            "assets": [
+                {
+                    "name": "SuperClip-v1.0.6.zip",
+                    "browser_download_url": "https://github.com/nhanqv-ai/SuperClip/releases/download/v1.0.6/SuperClip-v1.0.6.zip"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let clipMockConfig = URLSessionConfiguration.ephemeral
+        clipMockConfig.protocolClasses = [SuperClipMockProtocol.self]
+        let clipResilienceMgr = UpdateManager(session: URLSession(configuration: clipMockConfig))
+        clipResilienceMgr.currentVersion = "1.0.5"
+        clipResilienceMgr.githubToken = "ghp_superclip_token"
+
+        // 1) Initial 200 OK caches ETag and sends Authorization: Bearer
+        SuperClipMockProtocol.statusCode = 200
+        SuperClipMockProtocol.simulateRedirectFallback = false
+        var clipStep1Done = false
+        clipResilienceMgr.checkForUpdates(userInitiated: true) { _ in clipStep1Done = true }
+        let clipDl1 = Date().addingTimeInterval(2.0)
+        while !clipStep1Done && Date() < clipDl1 {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
+        TestHarness.assertEqual(SuperClipMockProtocol.lastAuthHeader, "Bearer ghp_superclip_token", "SuperClip sends Authorization Bearer header when githubToken is set")
+
+        // 2) Subsequent 304 Not Modified sends If-None-Match and reuses cached release
+        SuperClipMockProtocol.statusCode = 304
+        var clipStep2Done = false
+        var clipCachedRelease: ReleaseInfo?
+        clipResilienceMgr.checkForUpdates(userInitiated: true) { res in
+            if case .success(let rel) = res { clipCachedRelease = rel }
+            clipStep2Done = true
+        }
+        let clipDl2 = Date().addingTimeInterval(2.0)
+        while !clipStep2Done && Date() < clipDl2 {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
+        TestHarness.assertEqual(SuperClipMockProtocol.lastIfNoneMatch, "\"etag-superclip-1.0.6\"", "SuperClip sends If-None-Match header with cached ETag")
+        TestHarness.assertEqual(clipCachedRelease?.tagName, "v1.0.6", "SuperClip reuses cached release on HTTP 304")
+
+        // 3) 403 Rate Limit falls back to GitHub web redirect
+        let clipFallbackMgr = UpdateManager(session: URLSession(configuration: clipMockConfig))
+        clipFallbackMgr.currentVersion = "1.0.5"
+        SuperClipMockProtocol.statusCode = 403
+        SuperClipMockProtocol.simulateRedirectFallback = true
+        var clipFallbackDone = false
+        var clipFallbackRelease: ReleaseInfo?
+        clipFallbackMgr.checkForUpdates(userInitiated: true) { res in
+            if case .success(let rel) = res { clipFallbackRelease = rel }
+            clipFallbackDone = true
+        }
+        let clipFbDl = Date().addingTimeInterval(2.0)
+        while !clipFallbackDone && Date() < clipFbDl {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
+        TestHarness.assertEqual(clipFallbackRelease?.tagName, "v1.0.6", "SuperClip 403 rate limit falls back to web release redirect and resolves v1.0.6")
     }
 }
